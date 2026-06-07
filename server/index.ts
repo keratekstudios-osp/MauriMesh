@@ -55,7 +55,7 @@ app.get("/", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "maurimesh-replit-api",
-    truth: "Replit API is development/simulation only. It does not prove live BLE.",
+    truth: "[SIMULATION - NOT LIVE BLE] Replit API is development/simulation only. It does not prove live BLE.",
     endpoints: ["/api/health", "/api/mesh/status"],
   });
 });
@@ -65,14 +65,14 @@ app.get("/api/health", (_req, res) => {
     ok: true,
     service: "maurimesh-replit-api",
     mode: "development",
-    truth: "Replit API is development only. It does not prove live BLE.",
+    truth: "[SIMULATION - NOT LIVE BLE] Replit API is development only. It does not prove live BLE.",
   });
 });
 
 app.get("/api/mesh/status", (_req, res) => {
   res.json({
     mode: "SIMULATION",
-    truth: "Replit API simulation only. Not live BLE.",
+    truth: "[SIMULATION - NOT LIVE BLE] Replit API simulation only. Not live BLE.",
     nodes: [
       { id: "A", label: "Device A", status: "online", signal: 96, x: 18, y: 30 },
       { id: "B", label: "Relay B", status: "relay", signal: 82, x: 48, y: 54 },
