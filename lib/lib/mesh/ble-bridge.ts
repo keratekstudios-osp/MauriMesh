@@ -20,7 +20,7 @@ export function bleSend(packet: MeshPacket): void {
   //   await device.writeCharacteristicWithoutResponseForService(
   //     SERVICE_UUID, CHAR_UUID, Buffer.from(data).toString('base64')
   //   );
-  console.log("[BLE SEND]", packet.type, "→", packet.toNodeId, "|", data.length, "bytes");
+  console.log("[SIMULATION - NOT LIVE BLE]", "[BLE SEND]", packet.type, "→", packet.toNodeId, "|", data.length, "bytes");
 }
 
 // BLE Receive hook — call this from your native BLE onCharacteristicChanged handler:
