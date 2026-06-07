@@ -51,6 +51,15 @@ app.use(express.json());
  * ============================================================================
  */
 
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "maurimesh-replit-api",
+    truth: "Replit API is development/simulation only. It does not prove live BLE.",
+    endpoints: ["/api/health", "/api/mesh/status"],
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
