@@ -15,34 +15,47 @@ export default function MeshStatusScreen() {
   const [governance, setGovernance] = useState<MeshGovernanceCounters | null>(
     null
   );
+  const [governanceSource, setGovernanceSource] = useState<"live" | "local">(
+    "local"
+  );
 
   useEffect(() => {
     let alive = true;
-    getMeshStatus()
-      .then((status) => {
-        if (alive) setMesh(status);
-      })
-      .catch(() => {
-        if (alive) {
-          setMesh({
-            mode: "UNAVAILABLE",
-            message: "Mesh status failed safely.",
-            nodes: [],
-            routes: [],
-          });
-        }
-      });
+
+    const poll = async () => {
+      let status: MeshStatus;
+      try {
+        status = await getMeshStatus();
+      } catch {
+        status = {
+          mode: "UNAVAILABLE",
+          message: "Mesh status failed safely.",
+          nodes: [],
+          routes: [],
+        };
+      }
+      if (!alive) return;
+
+      setMesh(status);
+
+      // Prefer the shared server-side counters when the live API supplies them
+      // so every client shows the same activity; otherwise fall back to a local
+      // simulation so the screen still moves in offline preview.
+      if (status.governance) {
+        setGovernance(status.governance);
+        setGovernanceSource("live");
+      } else {
+        setGovernance(tickMeshGovernanceSim());
+        setGovernanceSource("local");
+      }
+    };
+
+    poll();
+    const timer = setInterval(poll, GOVERNANCE_TICK_MS);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
-  }, []);
-
-  useEffect(() => {
-    setGovernance(tickMeshGovernanceSim());
-    const timer = setInterval(() => {
-      setGovernance(tickMeshGovernanceSim());
-    }, GOVERNANCE_TICK_MS);
-    return () => clearInterval(timer);
   }, []);
 
   const mode = mesh?.mode || "UNAVAILABLE";
@@ -102,6 +115,12 @@ export default function MeshStatusScreen() {
             {governance?.quarantinedPeers ?? 0}
           </Text>
         </View>
+
+        <Text style={styles.govSource}>
+          {governanceSource === "live"
+            ? "Source: shared live API — the same numbers on web and every phone."
+            : "Source: local device fallback — live governance unavailable."}
+        </Text>
 
         <Text style={styles.cardText}>
           Live counters from the routing engine&apos;s self-healing and
@@ -172,4 +191,10 @@ const styles = StyleSheet.create({
   },
   govLabel: { color: "rgba(255,255,255,0.82)", fontSize: 14, fontWeight: "700" },
   govValue: { color: "#00D084", fontSize: 20, fontWeight: "900" },
+  govSource: {
+    color: "#38BDF8",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
 });

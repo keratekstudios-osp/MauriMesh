@@ -6,6 +6,7 @@
 - [MauriMesh DB schema complete](maurimesh-db-schema.md) — trustRecords, storeForwardQueue, proofLedger, runtimeErrors all exist in lib/db/src/schema/mesh.ts.
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
+- [MauriMesh governance source](maurimesh-governance-source.md) — governance counters come from ONE server-side engine behind /api/mesh/status; clients prefer API governance, local sim is fallback only.
 - [MauriMesh two engines](maurimesh-two-engines.md) — lib mauri-mesh-engine owns governance counters but UI screens render the separate invention-engine; lib engine not wired to UI by default.
 - [MauriMesh routing enhancement layers](maurimesh-routing-enhancements.md) — AI engine has self-healing (quarantine→rehab) + traffic-control (relay congestion) layers; any per-peer map must be GC'd against the live peer set or it leaks on churn.
 - [MauriMesh dependency vuln remediation](maurimesh-dependency-vulns.md) — fixes live as pnpm-workspace.yaml overrides; sandbox can't run pnpm install (OOM/500), lockfile regen happens on deploy. Beware pkill -f pnpm self-kill.

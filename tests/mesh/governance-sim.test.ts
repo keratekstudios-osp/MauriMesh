@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { tickMeshGovernanceSim } from "../../src/lib/meshGovernanceSim";
+import {
+  tickMeshGovernanceSim,
+  createMeshGovernanceSim,
+} from "../../src/lib/meshGovernanceSim";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -52,5 +55,31 @@ describe("meshGovernanceSim", () => {
     expect(sawQuarantined).toBe(true);
     expect(sawCleared).toBe(true);
     expect(rehabAfter).toBeGreaterThan(rehabStart);
+  });
+});
+
+describe("createMeshGovernanceSim", () => {
+  it("read() reports counters without advancing the simulation", () => {
+    const sim = createMeshGovernanceSim();
+    sim.tick();
+    const before = sim.read();
+    const again = sim.read();
+    expect(again).toEqual(before);
+  });
+
+  it("gives each instance its own independent engine state", () => {
+    const a = createMeshGovernanceSim();
+    const b = createMeshGovernanceSim();
+    a.tick();
+    a.tick();
+    a.tick();
+    // b has never ticked, so its counters stay at the initial zero state while
+    // a has accumulated activity — proving the two do not share an engine.
+    expect(b.read()).toEqual({
+      rehabilitations: 0,
+      trafficShapedRoutes: 0,
+      quarantinedPeers: 0,
+    });
+    expect(a.read().quarantinedPeers).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,9 +1,20 @@
 import express from "express";
+import { createMeshGovernanceSim } from "../src/lib/meshGovernanceSim";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+
+// [SIMULATION - NOT LIVE BLE] Single shared instance of the real lib routing
+// engine, driven on one server-side interval so every client that reads
+// /api/mesh/status sees the SAME self-healing / traffic-control activity rather
+// than each computing its own numbers. This is development/simulation only and
+// does not prove live BLE.
+const GOVERNANCE_TICK_MS = 1500;
+const governanceSim = createMeshGovernanceSim();
+governanceSim.tick();
+setInterval(() => governanceSim.tick(), GOVERNANCE_TICK_MS).unref?.();
 
 /*
  * ============================================================================
@@ -73,6 +84,7 @@ app.get("/api/mesh/status", (_req, res) => {
   res.json({
     mode: "SIMULATION",
     truth: "[SIMULATION - NOT LIVE BLE] Replit API simulation only. Not live BLE.",
+    governance: governanceSim.read(),
     nodes: [
       { id: "A", label: "Device A", status: "online", signal: 96, x: 18, y: 30 },
       { id: "B", label: "Relay B", status: "relay", signal: 82, x: 48, y: 54 },

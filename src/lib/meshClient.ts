@@ -1,11 +1,16 @@
 import { apiGet } from "./api";
 import { simulatedNodes, simulatedRoutes, SimNode, SimRoute } from "./simulation";
+import type { MeshGovernanceCounters } from "./meshGovernanceSim";
 
 export type MeshStatus = {
   mode: "LIVE" | "SIMULATION" | "UNAVAILABLE";
   message: string;
   nodes: SimNode[];
   routes: SimRoute[];
+  // Self-healing / traffic-control counters from the shared server-side engine.
+  // Present only when the live API is reachable; otherwise the client falls
+  // back to its own local simulation.
+  governance?: MeshGovernanceCounters;
 };
 
 export async function getMeshStatus(): Promise<MeshStatus> {
@@ -14,6 +19,7 @@ export async function getMeshStatus(): Promise<MeshStatus> {
     truth?: string;
     nodes?: SimNode[];
     routes?: SimRoute[];
+    governance?: MeshGovernanceCounters;
   }>("/api/mesh/status");
 
   if (result.ok) {
@@ -26,6 +32,7 @@ export async function getMeshStatus(): Promise<MeshStatus> {
       message: `[SIMULATION] ${result.data.truth ?? "Mesh API simulation only. This is not live BLE."}`,
       nodes: result.data.nodes || [],
       routes: result.data.routes || [],
+      governance: result.data.governance,
     };
   }
 
