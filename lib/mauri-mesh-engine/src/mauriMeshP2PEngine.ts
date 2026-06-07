@@ -22,7 +22,7 @@ export class MauriMeshP2PEngine {
   private queue: MeshPacket[] = [];
   private mode: MeshMode = "HYBRID";
   private _localNodeId: string;
-  private readonly config: Partial<RoutingEngineConfig>;
+  private config: Partial<RoutingEngineConfig>;
 
   constructor(localNodeId: string, config: Partial<RoutingEngineConfig> = {}) {
     this._localNodeId = localNodeId;
@@ -43,6 +43,23 @@ export class MauriMeshP2PEngine {
   setLocalNodeId(id: string): void {
     this._localNodeId = id;
     this.governance = new SelfGovernanceRoutingEngine(id, this.config);
+  }
+
+  /**
+   * Retune the self-healing / traffic-control thresholds at runtime. The new
+   * partial REPLACES any previous overrides (it is not merged with them), so
+   * passing `{}` cleanly restores the engine defaults. The governance engine is
+   * rebuilt with the new config — the same approach already used by
+   * setLocalNodeId — so peer learning state resets on a config change.
+   */
+  setConfig(config: Partial<RoutingEngineConfig> = {}): void {
+    this.config = { ...config };
+    this.governance = new SelfGovernanceRoutingEngine(this._localNodeId, this.config);
+  }
+
+  /** The resolved (defaults merged with overrides) config currently in effect. */
+  getConfig(): RoutingEngineConfig {
+    return this.governance.getConfig();
   }
 
   registerTransport(adapter: TransportAdapter): void {
