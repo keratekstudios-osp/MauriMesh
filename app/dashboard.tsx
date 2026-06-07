@@ -1,88 +1,135 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const MARKER = "SAFE_DASHBOARD_PROOF_BUTTONS_20260607_A";
+const MARKER = "SAFE_DASHBOARD_SCAN_PROOF_BUTTONS_20260607_A";
 
-const buttons = [
-  { title: "Settings", route: "/settings" },
-  { title: "Chat", route: "/chat" },
-  { title: "Living Mesh", route: "/living-mesh" },
-  { title: "Mesh Status", route: "/mesh-status" },
-  { title: "Add Friend", route: "/add-friend" },
-  { title: "Pixel Calling", route: "/pixel-calling" },
-  { title: "BLE Proof UI", route: "/ble-proof" },
-  { title: "Proof Ledger", route: "/proof-ledger" },
-  { title: "Native BLE Audit", route: "/native-ble-audit" },
-  { title: "Native BLE Status", route: "/native-ble-status" },
-];
+const routes = [
+  ["Settings", "/settings"],
+  ["Chat", "/chat"],
+  ["Living Mesh", "/living-mesh"],
+  ["Mesh Status", "/mesh-status"],
+  ["Add Friend", "/add-friend"],
+  ["Pixel Calling", "/pixel-calling"],
+  ["BLE Proof UI", "/ble-proof"],
+  ["Proof Ledger", "/proof-ledger"],
+  ["Native BLE Audit", "/native-ble-audit"],
+  ["Native BLE Status", "/native-ble-status"],
+  ["Native BLE Scan Proof", "/native-ble-scan-proof"],
+] as const;
 
-export default function DashboardScreen() {
+export default function Dashboard() {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.page} contentContainerStyle={styles.content}>
       <Text style={styles.brand}>MauriMesh</Text>
       <Text style={styles.title}>Dashboard</Text>
       <Text style={styles.marker}>{MARKER}</Text>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>System Status</Text>
-        <Text style={styles.cardText}>APK shell: PASS</Text>
-        <Text style={styles.cardText}>Package: com.maurimesh.messenger</Text>
-        <Text style={styles.cardText}>Router: safe Stack only</Text>
-        <Text style={styles.cardText}>BLE/runtime UI: safe proof shell only</Text>
+        <Text style={styles.body}>APK shell: PASS</Text>
+        <Text style={styles.body}>Package: com.maurimesh.messenger</Text>
+        <Text style={styles.body}>Router: safe Stack only</Text>
+        <Text style={styles.body}>Native bridge: PRESENT</Text>
+        <Text style={styles.body}>BLE scan proof: isolated test only</Text>
       </View>
 
-      {buttons.map((button) => (
-        <Pressable
-          key={button.route}
-          style={styles.navButton}
-          onPress={() => router.push(button.route)}
+      {routes.map(([label, route]) => (
+        <TouchableOpacity
+          key={route}
+          style={styles.button}
+          onPress={() => router.push(route as any)}
         >
-          <Text style={styles.navButtonText}>{button.title}</Text>
-        </Pressable>
+          <Text style={styles.buttonText}>{label}</Text>
+        </TouchableOpacity>
       ))}
 
-      <Pressable style={styles.homeButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.homeButton} onPress={() => router.push("/")}>
         <Text style={styles.homeButtonText}>Back Home</Text>
-      </Pressable>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#020617" },
-  content: { padding: 24, paddingTop: 72, paddingBottom: 42 },
-  brand: { color: "#00D084", fontSize: 38, fontWeight: "900", marginBottom: 8 },
-  title: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", marginBottom: 8 },
-  marker: { color: "#38BDF8", fontSize: 12, fontWeight: "800", marginBottom: 20 },
+  page: {
+    flex: 1,
+    backgroundColor: "#050816",
+  },
+  content: {
+    padding: 24,
+    paddingTop: 56,
+    paddingBottom: 80,
+  },
+  brand: {
+    color: "#00D084",
+    fontSize: 42,
+    fontWeight: "900",
+    marginBottom: 24,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  marker: {
+    color: "#4FC3F7",
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    marginBottom: 26,
+  },
   card: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderColor: "rgba(0,208,132,0.28)",
     borderWidth: 1,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 18,
+    borderColor: "rgba(0, 208, 132, 0.28)",
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 20,
+    backgroundColor: "rgba(255,255,255,0.035)",
   },
-  cardTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", marginBottom: 10 },
-  cardText: { color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 22 },
-  navButton: {
-    backgroundColor: "rgba(0,208,132,0.14)",
-    borderColor: "rgba(0,208,132,0.34)",
+  cardTitle: {
+    color: "#FFFFFF",
+    fontSize: 21,
+    fontWeight: "900",
+    marginBottom: 14,
+  },
+  body: {
+    color: "rgba(255,255,255,0.76)",
+    fontSize: 17,
+    lineHeight: 26,
+  },
+  button: {
+    backgroundColor: "rgba(0, 208, 132, 0.12)",
     borderWidth: 1,
+    borderColor: "rgba(0, 208, 132, 0.32)",
     borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    padding: 20,
+    marginBottom: 14,
   },
-  navButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "900",
+  },
   homeButton: {
     backgroundColor: "#00D084",
     borderRadius: 18,
-    paddingVertical: 18,
+    padding: 20,
+    marginTop: 18,
     alignItems: "center",
-    marginTop: 10,
   },
-  homeButtonText: { color: "#020617", fontSize: 16, fontWeight: "900" },
+  homeButtonText: {
+    color: "#03120C",
+    fontSize: 18,
+    fontWeight: "900",
+  },
 });
