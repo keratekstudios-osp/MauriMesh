@@ -106,5 +106,22 @@ export type MeshSnapshot = {
     packetsDropped: number;
     routeDecisions: number;
     learningEvents: number;
+    /**
+     * Self-healing layer: count of peers that were quarantined (blocked) and
+     * later autonomously rehabilitated back into routing after their cooldown
+     * elapsed or after a recovering delivery. Optional for backward compat.
+     */
+    rehabilitations?: number;
+    /**
+     * MauriAI traffic control: count of relay routes where a congestion penalty
+     * was applied to spread load across peers instead of hammering one relay.
+     * Optional for backward compat.
+     */
+    trafficShapedRoutes?: number;
+    /**
+     * Self-healing layer: number of peers currently quarantined (blocked)
+     * awaiting rehabilitation. Optional for backward compat.
+     */
+    quarantinedPeers?: number;
   };
 };

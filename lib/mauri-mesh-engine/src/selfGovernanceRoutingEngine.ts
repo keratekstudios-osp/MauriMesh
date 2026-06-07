@@ -12,6 +12,24 @@ import { createJumpCode, scoreJumpCompatibility } from "./jumpCodeEngine";
 const DEFAULT_MAX_PACKET_AGE_MS = 1000 * 60 * 10;
 const STALE_PEER_MS = 1000 * 45;
 
+// ── Self-healing layer ────────────────────────────────────────────────────────
+// A peer whose trust collapses below this is quarantined ("blocked").
+const TRUST_BLOCK_THRESHOLD = 25;
+// How long a quarantined peer stays blocked before the mesh autonomously
+// rehabilitates it back onto probation so the network self-heals.
+const PEER_BLOCK_COOLDOWN_MS = 1000 * 30;
+// Trust a rehabilitated peer is restored to: above the block threshold but low,
+// so it must re-earn its standing through successful deliveries.
+const REHAB_TRUST = 30;
+
+// ── MauriAI traffic control ───────────────────────────────────────────────────
+// Sliding window over which recent relay load is counted for congestion shaping.
+const CONGESTION_WINDOW_MS = 1000 * 5;
+// Score penalty applied per recent packet carried by a relay candidate.
+const CONGESTION_PENALTY_PER_PACKET = 6;
+// Upper bound on the congestion penalty so a strong relay is never fully starved.
+const CONGESTION_MAX_PENALTY = 30;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -22,6 +40,12 @@ export class SelfGovernanceRoutingEngine {
   private droppedPackets = 0;
   private routeDecisions = 0;
   private learningEvents = 0;
+  private rehabilitations = 0;
+  private trafficShapedRoutes = 0;
+  // Self-healing: peerId -> timestamp after which a blocked peer may rehabilitate.
+  private blockedUntil = new Map<string, number>();
+  // Traffic control: peerId -> recent send timestamps within the congestion window.
+  private recentSends = new Map<string, number[]>();
 
   constructor(private readonly localNodeId: string) {}
 
@@ -133,6 +157,11 @@ export class SelfGovernanceRoutingEngine {
       };
     }
 
+    // Self-healing layer: autonomously rehabilitate quarantined peers whose
+    // cooldown has elapsed so the mesh recovers lost routes without operator
+    // intervention. Runs before route selection so healed peers are eligible.
+    this.selfHeal(now);
+
     const peers = [...this.peers.values()]
       .filter((peer) => peer.id !== this.localNodeId)
       .filter((peer) => peer.status !== "blocked")
@@ -142,10 +171,36 @@ export class SelfGovernanceRoutingEngine {
           now - peer.lastSeen <= STALE_PEER_MS || peer.id === packet.to
       );
 
+    let trafficShaped = false;
+
     const candidates: RouteCandidate[] = peers
       .map((peer) => {
         const jumpScore = scoreJumpCompatibility(packet, peer);
-        const score = clamp(peer.routeScore * 0.75 + jumpScore * 0.25, 0, 100);
+        const baseScore = clamp(peer.routeScore * 0.75 + jumpScore * 0.25, 0, 100);
+
+        // MauriAI traffic control: relay candidates are penalised in proportion
+        // to the load they have recently carried so packets spread across the
+        // mesh instead of saturating a single relay. The direct target is never
+        // penalised — delivery to the destination stays deterministic.
+        const isRelay = peer.id !== packet.to;
+        let score = baseScore;
+        let reason =
+          packet.to === peer.id
+            ? "Direct target peer visible."
+            : "Relay candidate selected by score.";
+
+        if (isRelay) {
+          const load = this.peerLoad(peer.id, now);
+          if (load > 0) {
+            const penalty = Math.min(
+              CONGESTION_MAX_PENALTY,
+              load * CONGESTION_PENALTY_PER_PACKET
+            );
+            score = clamp(baseScore - penalty, 0, 100);
+            trafficShaped = true;
+            reason = `Relay candidate scored with congestion penalty (load ${load}).`;
+          }
+        }
 
         return {
           peerId: peer.id,
@@ -157,16 +212,14 @@ export class SelfGovernanceRoutingEngine {
             transport: peer.transport,
             routeHint: packet.to === peer.id ? "DIRECT_TARGET" : "RELAY_TARGET",
           }),
-          reason:
-            packet.to === peer.id
-              ? "Direct target peer visible."
-              : "Relay candidate selected by score.",
+          reason,
         };
       })
       .sort((a, b) => b.score - a.score);
 
     const direct = candidates.find((c) => c.peerId === packet.to);
     if (direct && direct.score >= 35) {
+      this.recordPeerLoad(direct.peerId, now);
       return {
         decision: "ALLOW_DIRECT",
         selected: direct,
@@ -177,6 +230,8 @@ export class SelfGovernanceRoutingEngine {
 
     const relay = candidates.find((c) => c.score >= 50);
     if (relay) {
+      this.recordPeerLoad(relay.peerId, now);
+      if (trafficShaped) this.trafficShapedRoutes++;
       return {
         decision: "ALLOW_RELAY",
         selected: relay,
@@ -213,18 +268,109 @@ export class SelfGovernanceRoutingEngine {
     if (outcome.ok) {
       peer.successCount += 1;
       peer.latencyMs = Math.round(peer.latencyMs * 0.7 + outcome.latencyMs * 0.3);
-      peer.trust = clamp(peer.trust + 2, 0, 100);
+      // Self-healing: a peer that was quarantined or weak and now succeeds is
+      // rehabilitated faster than a healthy peer is rewarded, so recovered
+      // routes return to service quickly.
+      const wasStruggling = peer.status === "blocked" || peer.status === "weak";
+      if (wasStruggling && this.blockedUntil.delete(peer.id)) {
+        this.rehabilitations++;
+      } else {
+        this.blockedUntil.delete(peer.id);
+      }
+      peer.trust = clamp(peer.trust + (wasStruggling ? 8 : 2), 0, 100);
       peer.status = peer.signal < 35 ? "weak" : "online";
     } else {
       peer.failureCount += 1;
       peer.trust = clamp(peer.trust - 6, 0, 100);
-      if (peer.trust < 25) peer.status = "blocked";
-      else if (peer.signal < 35) peer.status = "weak";
+      if (peer.trust < TRUST_BLOCK_THRESHOLD) {
+        peer.status = "blocked";
+        // Quarantine with a cooldown; the self-healing pass will rehabilitate
+        // this peer onto probation once the cooldown elapses.
+        this.blockedUntil.set(peer.id, outcome.timestamp + PEER_BLOCK_COOLDOWN_MS);
+      } else if (peer.signal < 35) {
+        peer.status = "weak";
+      }
     }
 
     peer.lastSeen = outcome.timestamp;
     peer.routeScore = this.calculateRouteScore(peer);
     this.peers.set(peer.id, peer);
+  }
+
+  /**
+   * Self-healing pass: rehabilitate quarantined peers whose cooldown has
+   * elapsed by restoring them onto probation (low trust) so the mesh can
+   * autonomously recover routes lost to transient failures.
+   */
+  private selfHeal(now: number): void {
+    for (const peer of this.peers.values()) {
+      if (peer.status !== "blocked") continue;
+      const until = this.blockedUntil.get(peer.id);
+      if (until !== undefined && now < until) continue;
+
+      peer.trust = clamp(Math.max(peer.trust, REHAB_TRUST), 0, 100);
+      peer.status = peer.signal < 35 ? "weak" : "online";
+      peer.routeScore = this.calculateRouteScore(peer);
+      this.peers.set(peer.id, peer);
+      this.blockedUntil.delete(peer.id);
+      this.rehabilitations++;
+      this.learningEvents++;
+    }
+
+    this.pruneTransientState(now);
+  }
+
+  /**
+   * Garbage-collect self-healing and traffic-control state so the maps stay
+   * bounded by the live peer set over long-running sessions: drop traffic
+   * windows that have fully expired or belong to peers that no longer exist,
+   * and drop quarantine entries for peers that are gone.
+   */
+  private pruneTransientState(now: number): void {
+    for (const [id, sends] of this.recentSends) {
+      if (!this.peers.has(id)) {
+        this.recentSends.delete(id);
+        continue;
+      }
+      const fresh = sends.filter((t) => now - t <= CONGESTION_WINDOW_MS);
+      if (fresh.length === 0) this.recentSends.delete(id);
+      else if (fresh.length !== sends.length) this.recentSends.set(id, fresh);
+    }
+    for (const id of this.blockedUntil.keys()) {
+      if (!this.peers.has(id)) this.blockedUntil.delete(id);
+    }
+  }
+
+  /**
+   * Lifecycle cleanup: forget a peer entirely, including its quarantine and
+   * traffic-control state, so a departed/replaced node leaves no residue.
+   */
+  removePeer(id: string): boolean {
+    this.blockedUntil.delete(id);
+    this.recentSends.delete(id);
+    return this.peers.delete(id);
+  }
+
+  /** Traffic control: number of packets a relay has carried within the window. */
+  private peerLoad(peerId: string, now: number): number {
+    const sends = this.recentSends.get(peerId);
+    if (!sends) return 0;
+    const fresh = sends.filter((t) => now - t <= CONGESTION_WINDOW_MS);
+    if (fresh.length !== sends.length) {
+      if (fresh.length === 0) this.recentSends.delete(peerId);
+      else this.recentSends.set(peerId, fresh);
+    }
+    return fresh.length;
+  }
+
+  /** Traffic control: record that a peer has just been selected to carry a packet. */
+  private recordPeerLoad(peerId: string, now: number): void {
+    const sends = this.recentSends.get(peerId) ?? [];
+    sends.push(now);
+    this.recentSends.set(
+      peerId,
+      sends.filter((t) => now - t <= CONGESTION_WINDOW_MS)
+    );
   }
 
   getPeers(): MeshPeer[] {
@@ -242,6 +388,9 @@ export class SelfGovernanceRoutingEngine {
       packetsDropped: this.droppedPackets,
       routeDecisions: this.routeDecisions,
       learningEvents: this.learningEvents,
+      rehabilitations: this.rehabilitations,
+      trafficShapedRoutes: this.trafficShapedRoutes,
+      quarantinedPeers: this.blockedUntil.size,
     };
   }
 

@@ -6,3 +6,4 @@
 - [MauriMesh DB schema complete](maurimesh-db-schema.md) — trustRecords, storeForwardQueue, proofLedger, runtimeErrors all exist in lib/db/src/schema/mesh.ts.
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
+- [MauriMesh routing enhancement layers](maurimesh-routing-enhancements.md) — AI engine adds self-healing (quarantine+cooldown rehab) and traffic-control (relay congestion penalty); per-peer maps need GC via pruneTransientState/removePeer or they leak on churn.
