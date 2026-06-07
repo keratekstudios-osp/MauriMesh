@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { getMeshStatus, MeshStatus } from "../src/lib/meshClient";
+import {
+  MeshGovernanceCounters,
+  tickMeshGovernanceSim,
+} from "../src/lib/meshGovernanceSim";
 
 const MARKER = "API_FALLBACK_MESH_STATUS_20260607_A";
 
+const GOVERNANCE_TICK_MS = 1500;
+
 export default function MeshStatusScreen() {
   const [mesh, setMesh] = useState<MeshStatus | null>(null);
+  const [governance, setGovernance] = useState<MeshGovernanceCounters | null>(
+    null
+  );
 
   useEffect(() => {
     let alive = true;
@@ -26,6 +35,14 @@ export default function MeshStatusScreen() {
     return () => {
       alive = false;
     };
+  }, []);
+
+  useEffect(() => {
+    setGovernance(tickMeshGovernanceSim());
+    const timer = setInterval(() => {
+      setGovernance(tickMeshGovernanceSim());
+    }, GOVERNANCE_TICK_MS);
+    return () => clearInterval(timer);
   }, []);
 
   const mode = mesh?.mode || "UNAVAILABLE";
@@ -61,6 +78,37 @@ export default function MeshStatusScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Routes Visible</Text>
         <Text style={styles.cardText}>{mesh?.routes.length || 0} route(s)</Text>
+      </View>
+
+      <View style={[styles.card, styles.govCard]}>
+        <Text style={styles.cardTitle}>Self-Healing & Traffic Control</Text>
+        <Text style={styles.govBadge}>[SIMULATION - NOT LIVE BLE]</Text>
+
+        <View style={styles.govRow}>
+          <Text style={styles.govLabel}>Peers rehabilitated</Text>
+          <Text style={styles.govValue}>
+            {governance?.rehabilitations ?? 0}
+          </Text>
+        </View>
+        <View style={styles.govRow}>
+          <Text style={styles.govLabel}>Traffic-shaped routes</Text>
+          <Text style={styles.govValue}>
+            {governance?.trafficShapedRoutes ?? 0}
+          </Text>
+        </View>
+        <View style={[styles.govRow, styles.govRowLast]}>
+          <Text style={styles.govLabel}>Peers quarantined now</Text>
+          <Text style={styles.govValue}>
+            {governance?.quarantinedPeers ?? 0}
+          </Text>
+        </View>
+
+        <Text style={styles.cardText}>
+          Live counters from the routing engine&apos;s self-healing and
+          traffic-control layers, updating every {GOVERNANCE_TICK_MS / 1000}s as
+          the simulated mesh runs. On a physical device these reflect real BLE
+          packet flow; here they are development simulation only.
+        </Text>
       </View>
 
       <View style={styles.card}>
@@ -100,4 +148,28 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", marginBottom: 8 },
   cardText: { color: "rgba(255,255,255,0.78)", fontSize: 14, lineHeight: 22 },
+  govCard: {
+    borderColor: "rgba(245,158,11,0.45)",
+  },
+  govBadge: {
+    color: "#F59E0B",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  govRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  govRowLast: {
+    borderBottomWidth: 0,
+    marginBottom: 8,
+  },
+  govLabel: { color: "rgba(255,255,255,0.82)", fontSize: 14, fontWeight: "700" },
+  govValue: { color: "#00D084", fontSize: 20, fontWeight: "900" },
 });
