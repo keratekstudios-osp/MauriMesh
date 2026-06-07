@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SelfGovernanceRoutingEngine } from "../../lib/mauri-mesh-engine/src/selfGovernanceRoutingEngine";
+import {
+  DEFAULT_ROUTING_CONFIG,
+  SelfGovernanceRoutingEngine,
+} from "../../lib/mauri-mesh-engine/src/selfGovernanceRoutingEngine";
+import { MauriMeshP2PEngine } from "../../lib/mauri-mesh-engine/src/mauriMeshP2PEngine";
 
 // These tests exercise the live AI routing engine that powers MauriMesh's
 // relay routing, self-learning, self-healing and traffic-control layers.
@@ -223,5 +227,136 @@ describe("SelfGovernanceRoutingEngine — state lifecycle", () => {
     // A routing decision runs the GC pass; quarantine state must stay clean.
     engine.decideRoute(engine.createPacket({ to: "far", payload: {} }));
     expect(engine.getGovernanceStats().quarantinedPeers).toBe(0);
+  });
+});
+
+describe("SelfGovernanceRoutingEngine — tunable thresholds", () => {
+  it("defaults to today's values when no config is passed", () => {
+    const engine = new SelfGovernanceRoutingEngine("A");
+    expect(engine.getConfig()).toEqual(DEFAULT_ROUTING_CONFIG);
+  });
+
+  it("merges partial overrides over the defaults", () => {
+    const engine = new SelfGovernanceRoutingEngine("A", { rehabTrust: 55 });
+    const config = engine.getConfig();
+    expect(config.rehabTrust).toBe(55);
+    // Untouched fields keep their default values.
+    expect(config.trustBlockThreshold).toBe(DEFAULT_ROUTING_CONFIG.trustBlockThreshold);
+    expect(config.congestionWindowMs).toBe(DEFAULT_ROUTING_CONFIG.congestionWindowMs);
+  });
+
+  it("honours a custom trustBlockThreshold when quarantining a peer", () => {
+    // A high threshold blocks a peer after a single failure, which the default
+    // (25) would not do — proving the configured value drives the behavior.
+    const engine = new SelfGovernanceRoutingEngine("A", { trustBlockThreshold: 65 });
+    engine.upsertPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.applyDeliveryOutcome({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+
+    expect(engine.getGovernanceStats().quarantinedPeers).toBe(1);
+  });
+
+  it("does not block on a single failure under the default threshold", () => {
+    const engine = new SelfGovernanceRoutingEngine("A");
+    engine.upsertPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.applyDeliveryOutcome({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+
+    expect(engine.getGovernanceStats().quarantinedPeers).toBe(0);
+  });
+
+  it("honours a custom peerBlockCooldownMs so a blocked peer rehabilitates immediately", () => {
+    const engine = new SelfGovernanceRoutingEngine("A", {
+      trustBlockThreshold: 65,
+      peerBlockCooldownMs: 0,
+    });
+    engine.upsertPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.applyDeliveryOutcome({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+    expect(engine.getGovernanceStats().quarantinedPeers).toBe(1);
+
+    // Cooldown is 0, so the next routing pass self-heals the peer at once.
+    engine.decideRoute(engine.createPacket({ to: "far", payload: {} }));
+    expect(engine.getGovernanceStats().quarantinedPeers).toBe(0);
+    expect(engine.getGovernanceStats().rehabilitations).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("MauriMeshP2PEngine — config forwarding", () => {
+  it("forwards the routing config to its governance engine", () => {
+    const engine = new MauriMeshP2PEngine("A", { trustBlockThreshold: 65 });
+    engine.ingestPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.learn({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+
+    // The high threshold (forwarded into governance) blocks after one failure.
+    expect(engine.getSnapshot().governance?.quarantinedPeers).toBe(1);
+  });
+
+  it("preserves the config across setLocalNodeId", () => {
+    const engine = new MauriMeshP2PEngine("A", { trustBlockThreshold: 65 });
+    engine.setLocalNodeId("A2");
+    engine.ingestPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.learn({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+
+    expect(engine.getSnapshot().governance?.quarantinedPeers).toBe(1);
+  });
+
+  it("snapshots the passed config so later external mutation cannot leak in", () => {
+    const cfg: Partial<{ trustBlockThreshold: number }> = { trustBlockThreshold: 65 };
+    const engine = new MauriMeshP2PEngine("A", cfg);
+    // Mutate the caller's object AFTER construction. A leaked reference would
+    // drop the threshold to 1, so a single failure (trust 64) would NOT block.
+    cfg.trustBlockThreshold = 1;
+    engine.setLocalNodeId("A2"); // recreates governance from the stored config
+    engine.ingestPeer({ id: "B", trust: 70, signal: 80, status: "online" });
+
+    engine.learn({
+      packetId: "f1",
+      peerId: "B",
+      ok: false,
+      latencyMs: 500,
+      timestamp: Date.now(),
+    });
+
+    // Threshold stayed at the snapshotted 65, so the peer is quarantined.
+    expect(engine.getSnapshot().governance?.quarantinedPeers).toBe(1);
+  });
+});
+
+describe("routing config defaults", () => {
+  it("are frozen so they cannot be mutated process-wide", () => {
+    expect(Object.isFrozen(DEFAULT_ROUTING_CONFIG)).toBe(true);
   });
 });

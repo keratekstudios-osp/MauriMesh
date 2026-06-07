@@ -5,6 +5,7 @@ import {
   PeerStatus,
   RouteCandidate,
   RouteDecision,
+  RoutingEngineConfig,
   TransportKind,
 } from "./types";
 import { createJumpCode, scoreJumpCompatibility } from "./jumpCodeEngine";
@@ -30,6 +31,20 @@ const CONGESTION_PENALTY_PER_PACKET = 6;
 // Upper bound on the congestion penalty so a strong relay is never fully starved.
 const CONGESTION_MAX_PENALTY = 30;
 
+/**
+ * Default tunable thresholds. Passing nothing (or only some fields) to the
+ * engine reproduces exactly this behavior — these are the values the engine
+ * shipped with before they became configurable.
+ */
+export const DEFAULT_ROUTING_CONFIG: Readonly<RoutingEngineConfig> = Object.freeze({
+  trustBlockThreshold: TRUST_BLOCK_THRESHOLD,
+  peerBlockCooldownMs: PEER_BLOCK_COOLDOWN_MS,
+  rehabTrust: REHAB_TRUST,
+  congestionWindowMs: CONGESTION_WINDOW_MS,
+  congestionPenaltyPerPacket: CONGESTION_PENALTY_PER_PACKET,
+  congestionMaxPenalty: CONGESTION_MAX_PENALTY,
+});
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -46,8 +61,15 @@ export class SelfGovernanceRoutingEngine {
   private blockedUntil = new Map<string, number>();
   // Traffic control: peerId -> recent send timestamps within the congestion window.
   private recentSends = new Map<string, number[]>();
+  // Tunable thresholds for the self-healing and traffic-control layers.
+  private readonly config: RoutingEngineConfig;
 
-  constructor(private readonly localNodeId: string) {}
+  constructor(
+    private readonly localNodeId: string,
+    config: Partial<RoutingEngineConfig> = {}
+  ) {
+    this.config = { ...DEFAULT_ROUTING_CONFIG, ...config };
+  }
 
   upsertPeer(
     input: Partial<MeshPeer> & { id: string; label?: string; transport?: TransportKind }
@@ -193,8 +215,8 @@ export class SelfGovernanceRoutingEngine {
           const load = this.peerLoad(peer.id, now);
           if (load > 0) {
             const penalty = Math.min(
-              CONGESTION_MAX_PENALTY,
-              load * CONGESTION_PENALTY_PER_PACKET
+              this.config.congestionMaxPenalty,
+              load * this.config.congestionPenaltyPerPacket
             );
             score = clamp(baseScore - penalty, 0, 100);
             trafficShaped = true;
@@ -282,11 +304,11 @@ export class SelfGovernanceRoutingEngine {
     } else {
       peer.failureCount += 1;
       peer.trust = clamp(peer.trust - 6, 0, 100);
-      if (peer.trust < TRUST_BLOCK_THRESHOLD) {
+      if (peer.trust < this.config.trustBlockThreshold) {
         peer.status = "blocked";
         // Quarantine with a cooldown; the self-healing pass will rehabilitate
         // this peer onto probation once the cooldown elapses.
-        this.blockedUntil.set(peer.id, outcome.timestamp + PEER_BLOCK_COOLDOWN_MS);
+        this.blockedUntil.set(peer.id, outcome.timestamp + this.config.peerBlockCooldownMs);
       } else if (peer.signal < 35) {
         peer.status = "weak";
       }
@@ -308,7 +330,7 @@ export class SelfGovernanceRoutingEngine {
       const until = this.blockedUntil.get(peer.id);
       if (until !== undefined && now < until) continue;
 
-      peer.trust = clamp(Math.max(peer.trust, REHAB_TRUST), 0, 100);
+      peer.trust = clamp(Math.max(peer.trust, this.config.rehabTrust), 0, 100);
       peer.status = peer.signal < 35 ? "weak" : "online";
       peer.routeScore = this.calculateRouteScore(peer);
       this.peers.set(peer.id, peer);
@@ -332,7 +354,7 @@ export class SelfGovernanceRoutingEngine {
         this.recentSends.delete(id);
         continue;
       }
-      const fresh = sends.filter((t) => now - t <= CONGESTION_WINDOW_MS);
+      const fresh = sends.filter((t) => now - t <= this.config.congestionWindowMs);
       if (fresh.length === 0) this.recentSends.delete(id);
       else if (fresh.length !== sends.length) this.recentSends.set(id, fresh);
     }
@@ -355,7 +377,7 @@ export class SelfGovernanceRoutingEngine {
   private peerLoad(peerId: string, now: number): number {
     const sends = this.recentSends.get(peerId);
     if (!sends) return 0;
-    const fresh = sends.filter((t) => now - t <= CONGESTION_WINDOW_MS);
+    const fresh = sends.filter((t) => now - t <= this.config.congestionWindowMs);
     if (fresh.length !== sends.length) {
       if (fresh.length === 0) this.recentSends.delete(peerId);
       else this.recentSends.set(peerId, fresh);
@@ -369,7 +391,7 @@ export class SelfGovernanceRoutingEngine {
     sends.push(now);
     this.recentSends.set(
       peerId,
-      sends.filter((t) => now - t <= CONGESTION_WINDOW_MS)
+      sends.filter((t) => now - t <= this.config.congestionWindowMs)
     );
   }
 
@@ -392,6 +414,11 @@ export class SelfGovernanceRoutingEngine {
       trafficShapedRoutes: this.trafficShapedRoutes,
       quarantinedPeers: this.blockedUntil.size,
     };
+  }
+
+  /** Returns the resolved (defaults merged with overrides) tunable config. */
+  getConfig(): RoutingEngineConfig {
+    return { ...this.config };
   }
 
   private calculateRouteScore(peer: MeshPeer): number {

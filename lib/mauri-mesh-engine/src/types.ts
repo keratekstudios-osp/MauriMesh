@@ -64,6 +64,28 @@ export type MeshPacket = {
   payloadHash?: string;
 };
 
+/**
+ * Tunable thresholds for the self-healing and traffic-control layers of the AI
+ * routing engine. All fields are required here; the engine accepts a
+ * `Partial<RoutingEngineConfig>` and fills any missing field from
+ * `DEFAULT_ROUTING_CONFIG`, so today's behavior is preserved when nothing is
+ * passed. Dense vs. sparse meshes can retune these without editing source.
+ */
+export type RoutingEngineConfig = {
+  /** Trust value below which a peer is quarantined ("blocked"). */
+  trustBlockThreshold: number;
+  /** How long a quarantined peer stays blocked before self-heal rehabilitation. */
+  peerBlockCooldownMs: number;
+  /** Trust a rehabilitated peer is restored to (probation; must re-earn standing). */
+  rehabTrust: number;
+  /** Sliding window over which recent relay load is counted for congestion shaping. */
+  congestionWindowMs: number;
+  /** Score penalty applied per recent packet carried by a relay candidate. */
+  congestionPenaltyPerPacket: number;
+  /** Upper bound on the congestion penalty so a strong relay is never fully starved. */
+  congestionMaxPenalty: number;
+};
+
 export type RouteCandidate = {
   peerId: string;
   transport: TransportKind;

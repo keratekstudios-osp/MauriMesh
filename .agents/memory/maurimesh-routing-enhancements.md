@@ -20,5 +20,9 @@ and load-balance.
   or it leaks on peer churn. This was the one issue code review caught.
 - New governance counters are exposed as OPTIONAL snapshot fields so older consumers
   don't break — keep that pattern when adding more.
+- The six thresholds are now injectable via RoutingEngineConfig (defaults in a
+  frozen DEFAULT_ROUTING_CONFIG). When injecting config: freeze the shared default
+  object and snapshot caller-passed config ({ ...config }) so a leaked reference
+  can't mutate behavior process-wide — code review caught both leaks here.
 - Still simulation/dev-grade: real BLE delivery outcomes must feed the learning on
   physical devices for the scores to reflect reality. Nothing here proves live BLE.

@@ -12,6 +12,7 @@ import {
   MeshSnapshot,
   MeshMode,
   MeshPeer,
+  RoutingEngineConfig,
   TransportKind,
 } from "./types";
 
@@ -21,10 +22,14 @@ export class MauriMeshP2PEngine {
   private queue: MeshPacket[] = [];
   private mode: MeshMode = "HYBRID";
   private _localNodeId: string;
+  private readonly config: Partial<RoutingEngineConfig>;
 
-  constructor(localNodeId: string) {
+  constructor(localNodeId: string, config: Partial<RoutingEngineConfig> = {}) {
     this._localNodeId = localNodeId;
-    this.governance = new SelfGovernanceRoutingEngine(localNodeId);
+    // Snapshot the caller's config so later external mutation of the passed
+    // object cannot silently change behavior when governance is recreated.
+    this.config = { ...config };
+    this.governance = new SelfGovernanceRoutingEngine(localNodeId, this.config);
     this.hybrid = new HybridTransportEngine();
 
     this.hybrid.register(createStoreForwardAdapter(this.queue));
@@ -37,7 +42,7 @@ export class MauriMeshP2PEngine {
 
   setLocalNodeId(id: string): void {
     this._localNodeId = id;
-    this.governance = new SelfGovernanceRoutingEngine(id);
+    this.governance = new SelfGovernanceRoutingEngine(id, this.config);
   }
 
   registerTransport(adapter: TransportAdapter): void {
