@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MeshDuplicateGuard } from "../../artifacts/messenger-mobile/lib/mesh-core/MeshDuplicateGuard";
+import { MeshDuplicateGuard } from "../../lib/lib/mesh-core/MeshDuplicateGuard";
 
 describe("duplicate_packet_filter — capacity overflow eviction", () => {
   it("retains entries within TTL window when overflow occurs (no bulk splice)", () => {
