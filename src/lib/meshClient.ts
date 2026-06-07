@@ -10,14 +10,22 @@ export type MeshStatus = {
 
 export async function getMeshStatus(): Promise<MeshStatus> {
   const result = await apiGet<{
+    mode?: string;
+    truth?: string;
     nodes?: SimNode[];
     routes?: SimRoute[];
   }>("/api/mesh/status");
 
   if (result.ok) {
+    // The Replit API is development/simulation only — it returns mode "SIMULATION".
+    // Never present that as "LIVE": honour the backend's declared mode so a
+    // reachable API never makes simulated data look like real BLE.
+    const isSimulation = result.data.mode === "SIMULATION";
     return {
-      mode: "LIVE",
-      message: "Connected to Mesh API.",
+      mode: isSimulation ? "SIMULATION" : "LIVE",
+      message: isSimulation
+        ? `[SIMULATION] ${result.data.truth ?? "Mesh API simulation only. This is not live BLE."}`
+        : "Connected to Mesh API.",
       nodes: result.data.nodes || [],
       routes: result.data.routes || [],
     };
@@ -26,7 +34,7 @@ export async function getMeshStatus(): Promise<MeshStatus> {
   return {
     mode: "SIMULATION",
     message:
-      "Mesh API unavailable in APK/Replit preview. Showing labelled simulation only. This is not live BLE.",
+      "[SIMULATION] Mesh API unavailable in APK/Replit preview. Showing labelled simulation only. This is not live BLE.",
     nodes: simulatedNodes,
     routes: simulatedRoutes,
   };

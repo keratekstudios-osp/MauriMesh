@@ -191,7 +191,7 @@ export function ackLastRoute(): void {
   engine.ack(lastResult.packet.id, routeNodes, 420);
 }
 
-export function failLastRoute(reason = "Manual UI failure simulation."): void {
+export function failLastRoute(reason = "[SIMULATION] Manual UI failure simulation."): void {
   if (!lastResult) return;
   const routeNodes = [
     lastResult.packet.from,

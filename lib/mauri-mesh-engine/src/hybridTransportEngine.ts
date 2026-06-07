@@ -77,7 +77,7 @@ export function createSimulationAdapter(): TransportAdapter {
         ok: true,
         transport: "simulation",
         latencyMs: Date.now() - started,
-        reason: "Simulation transport delivered packet locally. Not real BLE.",
+        reason: "[SIMULATION] Simulation transport delivered packet locally. Not real BLE.",
       };
     },
   };

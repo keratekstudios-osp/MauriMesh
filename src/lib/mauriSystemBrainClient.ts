@@ -14,7 +14,7 @@ export async function getMauriSystemBrainSnapshot(): Promise<MauriSystemBrainSna
     mode: "BROWSER_SAFE",
     status: "SIMULATION",
     message:
-      "MauriMesh System Brain is running in browser-safe static preview mode.",
+      "[SIMULATION] MauriMesh System Brain is running in browser-safe static preview mode.",
     layers: [
       { name: "Messenger UI", status: "active" },
       { name: "Dashboard", status: "active" },
@@ -35,7 +35,7 @@ export async function runMauriSystemBrainDemo() {
   return {
     ok: true,
     mode: "BROWSER_SAFE",
-    message: "Demo route prepared in static simulation mode."
+    message: "[SIMULATION] Demo route prepared in static simulation mode."
   };
 }
 
@@ -43,7 +43,7 @@ export async function ackMauriSystemBrainRoute() {
   return {
     ok: true,
     mode: "BROWSER_SAFE",
-    message: "ACK simulated in static preview mode."
+    message: "[SIMULATION] ACK simulated in static preview mode."
   };
 }
 
@@ -51,6 +51,6 @@ export async function failMauriSystemBrainRoute() {
   return {
     ok: true,
     mode: "BROWSER_SAFE",
-    message: "Failure simulated in static preview mode."
+    message: "[SIMULATION] Failure simulated in static preview mode."
   };
 }
