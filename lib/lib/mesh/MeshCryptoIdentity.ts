@@ -203,3 +203,76 @@ export class ReplayCache {
     return this.cache.size;
   }
 }
+
+// ── Identity binding (nodeId → publicKey) ────────────────────────────────────
+
+/**
+ * Outcome of reconciling a packet's (fromNodeId, fromPublicKey) against the
+ * learned identity binding for that node.
+ *
+ *  - "first-seen": no prior key for this nodeId — the key is now bound to it.
+ *  - "match":      the key equals the key already bound to this nodeId.
+ *  - "conflict":   a DIFFERENT key was previously bound to this nodeId — this is
+ *                  an impersonation attempt and the packet must be rejected.
+ */
+export type KeyBindingResult = "first-seen" | "match" | "conflict";
+
+/**
+ * Trust-On-First-Use (TOFU) store binding a mesh nodeId to the Ed25519 public
+ * key first observed for it.
+ *
+ * A valid Ed25519 signature only proves the sender holds the private key for
+ * the public key THEY supplied in the packet — it does NOT prove that key
+ * belongs to the claimed `fromNodeId`. Node IDs in MauriMesh are random
+ * (`mm-<ts>-<rand>`), not derived from the key, so there is no self-certifying
+ * relationship to check. This store closes that gap: the first key seen for a
+ * node is remembered, and any later packet claiming the same nodeId with a
+ * different key is rejected as impersonation.
+ *
+ * In-memory and synchronous so it can gate the hot receive path. Callers are
+ * responsible for seeding it from / persisting it to durable storage.
+ */
+export class KeyBindingStore {
+  private readonly map = new Map<string, string>();
+
+  /** The public key currently bound to `nodeId`, or undefined if unbound. */
+  get(nodeId: string): string | undefined {
+    return this.map.get(nodeId);
+  }
+
+  /**
+   * Seed a known binding from durable storage. Never overwrites an existing
+   * in-memory entry, so a learned binding always wins over a stale seed.
+   * Rejects `fp:` fingerprint pseudo-keys — only full Ed25519 keys are trusted.
+   */
+  seed(nodeId: string, publicKey: string): void {
+    if (!nodeId || !publicKey || publicKey.startsWith("fp:")) return;
+    if (!this.map.has(nodeId)) this.map.set(nodeId, publicKey);
+  }
+
+  /**
+   * Reconcile an inbound packet's key against the bound identity for its node.
+   * On "first-seen" the binding is recorded so subsequent packets are compared
+   * against it. On "conflict" the existing binding is left untouched.
+   * A `fp:` fingerprint pseudo-key can never bind and is always a conflict.
+   */
+  reconcile(nodeId: string, publicKey: string): KeyBindingResult {
+    if (!nodeId || !publicKey || publicKey.startsWith("fp:")) return "conflict";
+    const existing = this.map.get(nodeId);
+    if (existing === undefined) {
+      this.map.set(nodeId, publicKey);
+      return "first-seen";
+    }
+    return existing === publicKey ? "match" : "conflict";
+  }
+
+  /** Number of bound identities. */
+  size(): number {
+    return this.map.size;
+  }
+
+  /** Drop all bindings. For testing only. */
+  clear(): void {
+    this.map.clear();
+  }
+}

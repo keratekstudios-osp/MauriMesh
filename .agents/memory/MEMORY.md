@@ -6,6 +6,7 @@
 - [MauriMesh DB schema complete](maurimesh-db-schema.md) — trustRecords, storeForwardQueue, proofLedger, runtimeErrors all exist in lib/db/src/schema/mesh.ts.
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
+- [MauriMesh packet trust model](maurimesh-packet-trust.md) — nodeId→key TOFU must seed only from verified packets (never advertisements); inbound requires sig except ROUTE_BEACON; outbound fail-closed at every egress + re-sign at drain.
 - [MauriMesh governance source](maurimesh-governance-source.md) — governance counters come from ONE server-side engine behind /api/mesh/status; clients prefer API governance, local sim is fallback only.
 - [MauriMesh routing presets](maurimesh-routing-presets.md) — user-tunable routing sensitivity (stable/balanced/aggressive); balanced={} = defaults; setConfig replaces+rebuilds; pure presets split from AsyncStorage for node tests.
 - [MauriMesh two engines](maurimesh-two-engines.md) — lib mauri-mesh-engine owns governance counters but UI screens render the separate invention-engine; lib engine not wired to UI by default.

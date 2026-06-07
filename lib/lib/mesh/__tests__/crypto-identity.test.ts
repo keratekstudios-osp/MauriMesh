@@ -28,6 +28,7 @@ import {
   signPacketBody,
   verifyPacketSignature,
   ReplayCache,
+  KeyBindingStore,
 } from "../MeshCryptoIdentity";
 import type { NodeCryptoIdentity } from "../MeshCryptoIdentity";
 import type { MeshPacket } from "../maurimesh-intelligent-contract";
@@ -277,5 +278,65 @@ describe("ReplayCache", () => {
     cache.evictExpired();
     expect(cache.size()).toBe(0);
     jest.useRealTimers();
+  });
+});
+
+// ── KeyBindingStore (nodeId → publicKey TOFU) ────────────────────────────────
+
+describe("KeyBindingStore", () => {
+  test("first packet for a node binds its key (first-seen)", () => {
+    const store = new KeyBindingStore();
+    expect(store.reconcile("mm-node-A", "keyA")).toBe("first-seen");
+    expect(store.get("mm-node-A")).toBe("keyA");
+  });
+
+  test("same key for a known node matches", () => {
+    const store = new KeyBindingStore();
+    store.reconcile("mm-node-A", "keyA");
+    expect(store.reconcile("mm-node-A", "keyA")).toBe("match");
+  });
+
+  test("different key for a known node conflicts (impersonation)", () => {
+    const store = new KeyBindingStore();
+    store.reconcile("mm-node-A", "keyA");
+    expect(store.reconcile("mm-node-A", "keyEVIL")).toBe("conflict");
+    // The original binding is preserved — the attacker cannot overwrite it.
+    expect(store.get("mm-node-A")).toBe("keyA");
+  });
+
+  test("seed establishes a binding without overwriting a learned one", () => {
+    const store = new KeyBindingStore();
+    store.reconcile("mm-node-A", "keyLEARNED");
+    store.seed("mm-node-A", "keySEED"); // must not clobber the learned key
+    expect(store.get("mm-node-A")).toBe("keyLEARNED");
+    // A seeded key for an unknown node then conflicts with a different key.
+    store.seed("mm-node-B", "keyB");
+    expect(store.reconcile("mm-node-B", "keyOTHER")).toBe("conflict");
+  });
+
+  test("distinct nodes hold independent bindings", () => {
+    const store = new KeyBindingStore();
+    expect(store.reconcile("mm-node-A", "keyA")).toBe("first-seen");
+    expect(store.reconcile("mm-node-B", "keyB")).toBe("first-seen");
+    expect(store.reconcile("mm-node-A", "keyA")).toBe("match");
+    expect(store.size()).toBe(2);
+  });
+
+  test("empty nodeId or key is treated as a conflict (never bound)", () => {
+    const store = new KeyBindingStore();
+    expect(store.reconcile("", "keyA")).toBe("conflict");
+    expect(store.reconcile("mm-node-A", "")).toBe("conflict");
+    expect(store.size()).toBe(0);
+  });
+
+  test("fp: fingerprint pseudo-keys never bind (advertisement poisoning guard)", () => {
+    const store = new KeyBindingStore();
+    // A fingerprint from the legacy manufacturer-data advertisement path.
+    store.seed("mm-node-A", "fp:AAAAAAAAAAA=");
+    expect(store.get("mm-node-A")).toBeUndefined();
+    expect(store.reconcile("mm-node-A", "fp:AAAAAAAAAAA=")).toBe("conflict");
+    expect(store.size()).toBe(0);
+    // A subsequent real verified key still binds cleanly.
+    expect(store.reconcile("mm-node-A", "realFullKey")).toBe("first-seen");
   });
 });

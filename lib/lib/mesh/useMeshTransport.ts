@@ -38,11 +38,14 @@ import {
 import type { FragmentEnvelope } from "./MeshFragmenter";
 import {
   loadOrCreateCryptoIdentity,
+  getCachedIdentity,
   signPacketBody,
   verifyPacketSignature,
   ReplayCache,
+  KeyBindingStore,
 } from "./MeshCryptoIdentity";
 import type { NodeCryptoIdentity } from "./MeshCryptoIdentity";
+import { loadVerifiedIdentities, recordVerifiedIdentity } from "./verifiedIdentityStore";
 import { meshOfflineEngine } from "../mesh-core/MeshOfflineEngine";
 import { PacketType } from "../mesh-core/types";
 import { createPacket } from "../mesh-core/MeshPacket";
@@ -68,6 +71,25 @@ function simpleChecksum(str: string): string {
 
 function formatTime(ms: number): string {
   return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * Fail-closed outbound authenticity gate. ROUTE_BEACON is the sole type allowed
+ * to travel unsigned (pure routing liveness); every other type MUST carry a
+ * signature. A non-beacon packet missing a signature — e.g. one created during
+ * the startup window before the crypto identity has loaded — is refused rather
+ * than leaked unsigned (the receiver would drop it anyway). This is invoked at
+ * every BLE egress point (trySendViaBle and the direct strict-ACK sends).
+ */
+function isOutboundAllowed(packet: MeshPacket): boolean {
+  if (packet.type !== "ROUTE_BEACON" && (!packet.signature || !packet.fromPublicKey)) {
+    console.log(
+      `[MauriMesh][UnsignedSendBlocked] refusing to emit unsigned ${packet.type}` +
+      ` packetId=${packet.packetId} — identity not ready`
+    );
+    return false;
+  }
+  return true;
 }
 
 function makeBleMsg(packet: MeshPacket): BleMessage {
@@ -173,6 +195,9 @@ async function trySendViaBle(
   onSendResult?: (peerId: string, success: boolean) => void
 ): Promise<string | false> {
   if (blePeers.length === 0) return false;
+
+  // Fail-closed outbound authenticity policy enforced for every send path.
+  if (!isOutboundAllowed(packet)) return false;
 
   if (packet.toNodeId === "BROADCAST") {
     let firstSuccessId: string | null = null;
@@ -298,6 +323,15 @@ class BleMeshTransportAdapter implements IMeshTransport {
       checksum: "",
     };
 
+    // Sign the retried packet so it satisfies the receiver's mandatory-signature
+    // policy. The hook signs first-attempt packets via signOutboundPacket(); this
+    // adapter runs outside the hook, so it reads the cached identity directly.
+    const identity = getCachedIdentity();
+    if (identity) {
+      contractPkt.fromPublicKey = identity.publicKey;
+      contractPkt.signature = signPacketBody(contractPkt, identity.privateKey);
+    }
+
     const sent = await trySendViaBle(contractPkt, peers, this.getSendTo());
     if (sent) {
       this.onRetrySuccess(corePkt.id);
@@ -366,6 +400,13 @@ export function useMeshTransport(myNodeId: string) {
    * guards relay forwarding; this guards local dispatch).
    */
   const replayCacheRef = useRef(new ReplayCache());
+  /**
+   * Trust-On-First-Use binding of peer nodeId → Ed25519 publicKey. Hydrated
+   * from the persisted nearby-peer registry on mount and updated as new peers
+   * are verified. Used to reject signed packets that reuse a known nodeId with
+   * a different key (signed impersonation).
+   */
+  const keyBindingRef = useRef(new KeyBindingStore());
 
   /** Update a peer's RouteScore in the Zustand store after a metrics change. */
   function refreshScore(peerId: string): void {
@@ -392,24 +433,39 @@ export function useMeshTransport(myNodeId: string) {
    */
   function signOutboundPacket(packet: MeshPacket): MeshPacket {
     const identity = identityRef.current;
-    if (!identity) return packet;
+    if (!identity) {
+      // Identity not loaded yet. Leave the packet unsigned; trySendViaBle is the
+      // single outbound choke point and refuses to emit unsigned non-beacon
+      // packets, so an unsigned packet can never reach the radio.
+      console.log(
+        `[MauriMesh][SignDeferred] identity not ready, ${packet.type}` +
+        ` packetId=${packet.packetId} left unsigned (will be blocked at send)`
+      );
+      return packet;
+    }
     packet.fromPublicKey = identity.publicKey;
     packet.signature = signPacketBody(packet, identity.privateKey);
     return packet;
   }
 
   /**
-   * Verify the signature of an inbound packet and check the replay cache,
-   * then dispatch it to routing logic if all checks pass.
+   * Verify the authenticity of an inbound packet, bind its key to the claimed
+   * node identity, check the replay cache, then dispatch to routing logic.
    *
-   * Policy:
-   *  - Signed packet (fromPublicKey + signature present):
-   *      invalid signature → [IdentityDrop], drop.
-   *      replay (fromNodeId + packetId seen before) → [ReplayDrop], drop.
-   *      valid + fresh → [Identity] verified, route.
-   *  - Unsigned packet (missing fromPublicKey / signature):
-   *      CHAT_MESSAGE or ACK → [Identity] warning, route (backward compat).
-   *      Other types (ROUTE_BEACON etc.) → route silently.
+   * Security policy (enforced for every BLE-sourced packet):
+   *  - ROUTE_BEACON is the ONLY type allowed unsigned — it is pure routing
+   *    liveness (registers an UNKNOWN-trust node, triggers a PONG) and performs
+   *    no message display, delivery-state change, or call UI.
+   *  - Every other type (CHAT_MESSAGE, ACK, READ_ACK, CALL_INVITE, …) MUST be
+   *    signed. Unsigned ones are dropped — authenticity is mandatory, not
+   *    best-effort.
+   *  - Signed packets:
+   *      invalid signature                → [IdentityDrop], drop.
+   *      key conflicts with bound identity → [IdentityBindingDrop], drop
+   *        (a valid signature over an attacker-chosen key does NOT prove the key
+   *         belongs to `fromNodeId`; the TOFU binding catches the swap).
+   *      replay (fromNodeId+packetId seen) → [ReplayDrop], drop.
+   *      valid + bound + fresh             → [Identity] verified, route.
    */
   function verifyAndDispatch(packet: MeshPacket): void {
     if (packet.fromPublicKey && packet.signature) {
@@ -419,6 +475,27 @@ export function useMeshTransport(myNodeId: string) {
           ` from nodeId=${packet.fromNodeId}`
         );
         return;
+      }
+      // Bind the signing key to the claimed nodeId (Trust-On-First-Use). A valid
+      // signature only proves the sender holds the private key for the key they
+      // supplied — not that the key belongs to fromNodeId. Reject any later
+      // packet that reuses a known nodeId with a different key (impersonation).
+      const binding = keyBindingRef.current.reconcile(
+        packet.fromNodeId,
+        packet.fromPublicKey
+      );
+      if (binding === "conflict") {
+        console.log(
+          `[MauriMesh][IdentityBindingDrop] nodeId=${packet.fromNodeId} presented a` +
+          ` key that does not match its established identity packetId=${packet.packetId}`
+        );
+        return;
+      }
+      if (binding === "first-seen") {
+        // Persist to the verified-identity store (signature already checked
+        // above) so the binding survives restarts. First-write-wins there
+        // prevents a later conflicting key from clobbering this identity.
+        recordVerifiedIdentity(packet.fromNodeId, packet.fromPublicKey).catch(() => {});
       }
       if (replayCacheRef.current.hasSeen(packet.fromNodeId, packet.packetId)) {
         console.log(
@@ -430,13 +507,16 @@ export function useMeshTransport(myNodeId: string) {
       replayCacheRef.current.markSeen(packet.fromNodeId, packet.packetId);
       console.log(
         `[MauriMesh][Identity] verified packetId=${packet.packetId}` +
-        ` from nodeId=${packet.fromNodeId}`
+        ` from nodeId=${packet.fromNodeId} (binding=${binding})`
       );
-    } else if (packet.type === "CHAT_MESSAGE" || packet.type === "ACK") {
+    } else if (packet.type === "ROUTE_BEACON") {
+      // Infrastructure liveness only — allowed unsigned.
+    } else {
       console.log(
-        `[MauriMesh][Identity] unsigned ${packet.type} packetId=${packet.packetId}` +
-        ` from nodeId=${packet.fromNodeId} (backward compat)`
+        `[MauriMesh][UnsignedDrop] rejecting unsigned ${packet.type}` +
+        ` packetId=${packet.packetId} from nodeId=${packet.fromNodeId}`
       );
+      return;
     }
     routeInboundPacket(packet);
   }
@@ -467,7 +547,7 @@ export function useMeshTransport(myNodeId: string) {
     // Stamp the outgoing packet so the receiving relay knows its position.
     const outgoing: MeshPacket = { ...ack, reversePathIndex: nextIdx };
     const nextHopPeer = blePeersRef.current.find((p) => p.nodeId === nextHopId);
-    if (nextHopPeer) {
+    if (nextHopPeer && isOutboundAllowed(outgoing)) {
       sendToRef.current(nextHopPeer.deviceId, makeBleMsg(outgoing)).catch(() => {});
       console.log(
         `[MauriMesh][ACKRouteStrict] ${myNodeId}→${nextHopId}` +
@@ -492,6 +572,16 @@ export function useMeshTransport(myNodeId: string) {
   // Once loaded, restart the BLE advertiser with the full identity beacon so
   // nearby devices can discover this node via the friend-invite pipeline.
   useEffect(() => {
+    // Seed the nodeId→publicKey trust bindings from identities established by
+    // PREVIOUSLY VERIFIED packets only (never from unauthenticated BLE
+    // advertisements) so an attacker cannot rebind a known identity after a
+    // restart.
+    loadVerifiedIdentities()
+      .then((ids) => {
+        for (const id of ids) keyBindingRef.current.seed(id.nodeId, id.publicKey);
+      })
+      .catch(() => {});
+
     loadOrCreateCryptoIdentity(myNodeId).then((id) => {
       identityRef.current = id;
       console.log(
@@ -572,7 +662,7 @@ export function useMeshTransport(myNodeId: string) {
       };
 
       const nextHopPeer = blePeersRef.current.find((p) => p.nodeId === nextHopId);
-      if (nextHopPeer) {
+      if (nextHopPeer && isOutboundAllowed(strictRelay)) {
         sendToRef.current(nextHopPeer.deviceId, makeBleMsg(strictRelay)).catch(() => {});
         console.log(
           `[MauriMesh][ACKHop] ${myNodeId}→${nextHopId}` +
@@ -941,6 +1031,11 @@ export function useMeshTransport(myNodeId: string) {
       if (pendingAcks && pendingAcks.length > 0) {
         strictAckQueueRef.current.delete(peer.nodeId);
         for (const pendingAck of pendingAcks) {
+          // Re-sign if it was queued unsigned during the identity-load window,
+          // mirroring the fallback-queue drain, so a startup-window ACK is not
+          // permanently blocked by the fail-closed egress gate.
+          if (!pendingAck.signature) signOutboundPacket(pendingAck);
+          if (!isOutboundAllowed(pendingAck)) continue;
           sendToRef.current(peer.deviceId, makeBleMsg(pendingAck)).catch(() => {});
           console.log(
             `[MauriMesh][ACKRouteStrict] drained queued ACK →${peer.nodeId}` +
@@ -1122,7 +1217,9 @@ export function useMeshTransport(myNodeId: string) {
       let packet: MeshPacket;
       try { packet = JSON.parse(json) as MeshPacket; }
       catch { return; }
-      routeInboundPacket(packet);
+      // Native GATT peripheral writes are attacker-controllable BLE input, so
+      // they go through the same authenticity gate as the JS BLE receive path.
+      verifyAndDispatch(packet);
     });
     const offStatus = onMauriMeshBleStatus((s) => console.log("[MauriMesh BLE]", s));
     return () => { mounted = false; offMessage(); offStatus(); };
@@ -1251,6 +1348,11 @@ export function useMeshTransport(myNodeId: string) {
       // --- Fallback queue (READ_ACK / CALL_INVITE) ---
       let packet = queue.current.dequeue();
       while (packet && active) {
+        // A packet may have been enqueued unsigned during the identity-load
+        // startup window. Re-sign at dequeue now that identity is (likely)
+        // available, otherwise trySendViaBle's fail-closed gate would block it
+        // forever. ROUTE_BEACON is never queued here.
+        if (!packet.signature) signOutboundPacket(packet);
         const scorer = (nodeId: string, rssi: number): number =>
           computeRouteScore(metricsRef.current.get(nodeId), rssi);
         const drainPeer = await trySendViaBle(packet, blePeers, sendTo, scorer, onSendResult);
@@ -1396,6 +1498,9 @@ export function useMeshTransport(myNodeId: string) {
         payload: packetId,
         checksum: "",
       };
+      // READ_ACK changes delivery state at the receiver, so it must be signed to
+      // satisfy the mandatory-signature receive policy.
+      signOutboundPacket(ackPacket);
 
       if (bleReady && blePeers.length > 0) {
         const sent = await trySendViaBle(ackPacket, blePeers, sendTo);
@@ -1450,6 +1555,9 @@ export function useMeshTransport(myNodeId: string) {
         payload,
         checksum: simpleChecksum(payload),
       };
+      // CALL_INVITE raises incoming-call UI at the receiver, so it must be signed
+      // to satisfy the mandatory-signature receive policy.
+      signOutboundPacket(packet);
 
       if (bleReady && blePeers.length > 0) {
         const sent = await trySendViaBle(packet, blePeers, sendTo);

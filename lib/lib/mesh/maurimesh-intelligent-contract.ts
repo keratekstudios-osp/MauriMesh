@@ -96,6 +96,12 @@ export interface MeshPacket {
    * Base64-encoded Ed25519 public key (32 bytes) of the originating node.
    * Set by the sender; preserved unchanged through all relay hops.
    * Required for signature verification at every hop and at final delivery.
+   *
+   * Optional at the type level only because ROUTE_BEACON liveness packets are
+   * intentionally unsigned. The receive gate (verifyAndDispatch in
+   * useMeshTransport.ts) enforces authenticity at runtime: every type EXCEPT
+   * ROUTE_BEACON is dropped unless it carries a valid fromPublicKey + signature
+   * whose key matches the bound identity for fromNodeId.
    */
   fromPublicKey?: string;
   /**
