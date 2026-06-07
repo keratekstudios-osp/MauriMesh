@@ -1,14 +1,47 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { getMeshStatus, MeshStatus } from "../src/lib/meshClient";
 import {
   MeshGovernanceCounters,
   tickMeshGovernanceSim,
 } from "../src/lib/meshGovernanceSim";
+import type { GovernanceHistoryEntry } from "../src/lib/governanceHistory";
 
 const MARKER = "API_FALLBACK_MESH_STATUS_20260607_A";
 
 const GOVERNANCE_TICK_MS = 1500;
+const HISTORY_LEN = 20;
+
+/**
+ * Dependency-free sparkline: a row of vertical bars normalised to the window's
+ * own max so flat/zero series stay readable. No charting library is required.
+ */
+function Sparkline({
+  values,
+  color,
+}: {
+  values: number[];
+  color: string;
+}): React.ReactElement {
+  const max = Math.max(1, ...values);
+  return (
+    <View style={styles.sparkRow}>
+      {values.length === 0 ? (
+        <Text style={styles.sparkEmpty}>collecting…</Text>
+      ) : (
+        values.map((v, i) => (
+          <View
+            key={i}
+            style={[
+              styles.sparkBar,
+              { height: 3 + (v / max) * 26, backgroundColor: color },
+            ]}
+          />
+        ))
+      )}
+    </View>
+  );
+}
 
 export default function MeshStatusScreen() {
   const [mesh, setMesh] = useState<MeshStatus | null>(null);
@@ -18,6 +51,10 @@ export default function MeshStatusScreen() {
   const [governanceSource, setGovernanceSource] = useState<"live" | "local">(
     "local"
   );
+  const [history, setHistory] = useState<GovernanceHistoryEntry[]>([]);
+  // Local rolling buffer used only when the API does not supply history, so the
+  // timeline still moves in offline preview.
+  const localHistoryRef = useRef<GovernanceHistoryEntry[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -38,15 +75,27 @@ export default function MeshStatusScreen() {
 
       setMesh(status);
 
-      // Prefer the shared server-side counters when the live API supplies them
-      // so every client shows the same activity; otherwise fall back to a local
-      // simulation so the screen still moves in offline preview.
-      if (status.governance) {
-        setGovernance(status.governance);
-        setGovernanceSource("live");
+      // Single source of truth per cycle: prefer the shared server-side counters
+      // when the live API supplies them so every client shows the same activity;
+      // otherwise tick the local simulation exactly ONCE so the screen still
+      // moves in offline preview. Reuse this one value for both the displayed
+      // "now" counters and the timeline sample so they can never diverge.
+      const currentCounters = status.governance ?? tickMeshGovernanceSim();
+      setGovernance(currentCounters);
+      setGovernanceSource(status.governance ? "live" : "local");
+
+      // Timeline: prefer the shared server-side rolling window so every client
+      // shows the identical self-heal cycle; otherwise append the one set of
+      // counters computed above to a local buffer capped at the same length.
+      if (status.governanceHistory && status.governanceHistory.length > 0) {
+        setHistory(status.governanceHistory.slice(-HISTORY_LEN));
       } else {
-        setGovernance(tickMeshGovernanceSim());
-        setGovernanceSource("local");
+        const next = [
+          ...localHistoryRef.current,
+          { t: Date.now(), ...currentCounters },
+        ].slice(-HISTORY_LEN);
+        localHistoryRef.current = next;
+        setHistory(next);
       }
     };
 
@@ -130,6 +179,65 @@ export default function MeshStatusScreen() {
         </Text>
       </View>
 
+      <View style={[styles.card, styles.govCard]}>
+        <Text style={styles.cardTitle}>Self-Heal Activity Timeline</Text>
+        <Text style={styles.govBadge}>[SIMULATION - NOT LIVE BLE]</Text>
+        <Text style={styles.timelineHint}>
+          Last {history.length}/{HISTORY_LEN} ticks (oldest → newest)
+        </Text>
+
+        <View style={styles.timelineRow}>
+          <View style={styles.timelineHead}>
+            <Text style={[styles.timelineLabel, { color: "#00D084" }]}>
+              Rehabilitated
+            </Text>
+            <Text style={[styles.timelineNow, { color: "#00D084" }]}>
+              {governance?.rehabilitations ?? 0}
+            </Text>
+          </View>
+          <Sparkline
+            color="#00D084"
+            values={history.map((h) => h.rehabilitations)}
+          />
+        </View>
+
+        <View style={styles.timelineRow}>
+          <View style={styles.timelineHead}>
+            <Text style={[styles.timelineLabel, { color: "#38BDF8" }]}>
+              Traffic-shaped
+            </Text>
+            <Text style={[styles.timelineNow, { color: "#38BDF8" }]}>
+              {governance?.trafficShapedRoutes ?? 0}
+            </Text>
+          </View>
+          <Sparkline
+            color="#38BDF8"
+            values={history.map((h) => h.trafficShapedRoutes)}
+          />
+        </View>
+
+        <View style={[styles.timelineRow, styles.timelineRowLast]}>
+          <View style={styles.timelineHead}>
+            <Text style={[styles.timelineLabel, { color: "#F59E0B" }]}>
+              Quarantined
+            </Text>
+            <Text style={[styles.timelineNow, { color: "#F59E0B" }]}>
+              {governance?.quarantinedPeers ?? 0}
+            </Text>
+          </View>
+          <Sparkline
+            color="#F59E0B"
+            values={history.map((h) => h.quarantinedPeers)}
+          />
+        </View>
+
+        <Text style={styles.govSource}>
+          {governanceSource === "live"
+            ? "Source: shared live API — the same timeline on web and every phone."
+            : "Source: local device fallback — live governance unavailable."}
+        </Text>
+      </View>
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Truth Boundary</Text>
         <Text style={styles.cardText}>
@@ -196,5 +304,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 10,
+  },
+  timelineHint: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 11,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  timelineRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  timelineRowLast: {
+    borderBottomWidth: 0,
+    marginBottom: 8,
+  },
+  timelineHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  timelineLabel: { fontSize: 13, fontWeight: "800" },
+  timelineNow: { fontSize: 16, fontWeight: "900" },
+  sparkRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    height: 30,
+  },
+  sparkBar: {
+    flex: 1,
+    marginHorizontal: 1,
+    borderRadius: 2,
+    minHeight: 3,
+  },
+  sparkEmpty: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 11,
+    fontWeight: "700",
   },
 });

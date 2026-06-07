@@ -18,6 +18,18 @@ and every phone show identical numbers) and only fall back to the local
 preview and each phone computed independent, divergent numbers. Do not
 re-introduce per-client simulation as the primary source.
 
+**Rolling history / timeline:** `src/lib/governanceHistory.ts`
+`createGovernanceHistory(maxEntries)` is a pure fixed-size buffer; the server
+records one snapshot per governance tick and exposes `governanceHistory` on the
+same status endpoint. Clients prefer it, else keep a local capped buffer.
+
+**Sub-rule (one tick per cycle):** in `app/mesh-status.tsx` compute counters
+ONCE per poll (`const currentCounters = status.governance ?? tickMeshGovernanceSim()`)
+and reuse that single value for BOTH the displayed "now" number AND the history
+append. Calling `tickMeshGovernanceSim()` separately for display and for history
+double-advances the local sim (~2x cadence) and desyncs the latest timeline
+sample from the shown counter. (Caught in code review.)
+
 **How to apply:**
 - `src/lib/meshGovernanceSim.ts` exports `createMeshGovernanceSim()` (factory →
   `tick()` / `read()`); each instance owns its own engine. The server creates the

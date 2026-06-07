@@ -1,6 +1,7 @@
 import { apiGet } from "./api";
 import { simulatedNodes, simulatedRoutes, SimNode, SimRoute } from "./simulation";
 import type { MeshGovernanceCounters } from "./meshGovernanceSim";
+import type { GovernanceHistoryEntry } from "./governanceHistory";
 
 export type MeshStatus = {
   mode: "LIVE" | "SIMULATION" | "UNAVAILABLE";
@@ -11,6 +12,10 @@ export type MeshStatus = {
   // Present only when the live API is reachable; otherwise the client falls
   // back to its own local simulation.
   governance?: MeshGovernanceCounters;
+  // Rolling window of recent governance snapshots (newest last) from the same
+  // shared server-side source, so clients can render the self-heal cycle over
+  // time. Present only when the live API is reachable.
+  governanceHistory?: GovernanceHistoryEntry[];
 };
 
 export async function getMeshStatus(): Promise<MeshStatus> {
@@ -20,6 +25,7 @@ export async function getMeshStatus(): Promise<MeshStatus> {
     nodes?: SimNode[];
     routes?: SimRoute[];
     governance?: MeshGovernanceCounters;
+    governanceHistory?: GovernanceHistoryEntry[];
   }>("/api/mesh/status");
 
   if (result.ok) {
@@ -33,6 +39,7 @@ export async function getMeshStatus(): Promise<MeshStatus> {
       nodes: result.data.nodes || [],
       routes: result.data.routes || [],
       governance: result.data.governance,
+      governanceHistory: result.data.governanceHistory,
     };
   }
 

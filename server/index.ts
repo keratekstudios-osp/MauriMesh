@@ -1,5 +1,6 @@
 import express from "express";
 import { createMeshGovernanceSim } from "../src/lib/meshGovernanceSim";
+import { createGovernanceHistory } from "../src/lib/governanceHistory";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -12,9 +13,17 @@ app.use(express.json());
 // than each computing its own numbers. This is development/simulation only and
 // does not prove live BLE.
 const GOVERNANCE_TICK_MS = 1500;
+const GOVERNANCE_HISTORY_LEN = 20;
 const governanceSim = createMeshGovernanceSim();
-governanceSim.tick();
-setInterval(() => governanceSim.tick(), GOVERNANCE_TICK_MS).unref?.();
+// Rolling window of the last N counter snapshots so clients can render the
+// self-heal cycle over time, not just the latest value. Recorded on the same
+// single server-side tick that drives the shared counters.
+const governanceHistory = createGovernanceHistory(GOVERNANCE_HISTORY_LEN);
+governanceHistory.record(governanceSim.tick());
+setInterval(
+  () => governanceHistory.record(governanceSim.tick()),
+  GOVERNANCE_TICK_MS
+).unref?.();
 
 /*
  * ============================================================================
@@ -85,6 +94,7 @@ app.get("/api/mesh/status", (_req, res) => {
     mode: "SIMULATION",
     truth: "[SIMULATION - NOT LIVE BLE] Replit API simulation only. Not live BLE.",
     governance: governanceSim.read(),
+    governanceHistory: governanceHistory.read(),
     nodes: [
       { id: "A", label: "Device A", status: "online", signal: 96, x: 18, y: 30 },
       { id: "B", label: "Relay B", status: "relay", signal: 82, x: 48, y: 54 },
