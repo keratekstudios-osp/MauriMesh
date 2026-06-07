@@ -92,6 +92,16 @@ function isOutboundAllowed(packet: MeshPacket): boolean {
   return true;
 }
 
+/**
+ * Outcome of verifyAndDispatch. Only "verified" carries a trusted nodeId that
+ * callers may use to commit a deviceId→nodeId mapping; "beacon" (unsigned
+ * ROUTE_BEACON liveness) and "dropped" must NOT update identity state.
+ */
+type VerifyDispatchResult =
+  | { status: "verified"; nodeId: string }
+  | { status: "beacon" }
+  | { status: "dropped" };
+
 function makeBleMsg(packet: MeshPacket): BleMessage {
   return {
     packetId: packet.packetId,
@@ -467,14 +477,15 @@ export function useMeshTransport(myNodeId: string) {
    *      replay (fromNodeId+packetId seen) → [ReplayDrop], drop.
    *      valid + bound + fresh             → [Identity] verified, route.
    */
-  function verifyAndDispatch(packet: MeshPacket): void {
+  function verifyAndDispatch(packet: MeshPacket): VerifyDispatchResult {
+    let verifiedNodeId: string | null = null;
     if (packet.fromPublicKey && packet.signature) {
       if (!verifyPacketSignature(packet)) {
         console.log(
           `[MauriMesh][IdentityDrop] invalid signature packetId=${packet.packetId}` +
           ` from nodeId=${packet.fromNodeId}`
         );
-        return;
+        return { status: "dropped" };
       }
       // Bind the signing key to the claimed nodeId (Trust-On-First-Use). A valid
       // signature only proves the sender holds the private key for the key they
@@ -489,7 +500,7 @@ export function useMeshTransport(myNodeId: string) {
           `[MauriMesh][IdentityBindingDrop] nodeId=${packet.fromNodeId} presented a` +
           ` key that does not match its established identity packetId=${packet.packetId}`
         );
-        return;
+        return { status: "dropped" };
       }
       if (binding === "first-seen") {
         // Persist to the verified-identity store (signature already checked
@@ -502,13 +513,14 @@ export function useMeshTransport(myNodeId: string) {
           `[MauriMesh][ReplayDrop] duplicate packetId=${packet.packetId}` +
           ` from nodeId=${packet.fromNodeId}`
         );
-        return;
+        return { status: "dropped" };
       }
       replayCacheRef.current.markSeen(packet.fromNodeId, packet.packetId);
       console.log(
         `[MauriMesh][Identity] verified packetId=${packet.packetId}` +
         ` from nodeId=${packet.fromNodeId} (binding=${binding})`
       );
+      verifiedNodeId = packet.fromNodeId;
     } else if (packet.type === "ROUTE_BEACON") {
       // Infrastructure liveness only — allowed unsigned.
     } else {
@@ -516,9 +528,16 @@ export function useMeshTransport(myNodeId: string) {
         `[MauriMesh][UnsignedDrop] rejecting unsigned ${packet.type}` +
         ` packetId=${packet.packetId} from nodeId=${packet.fromNodeId}`
       );
-      return;
+      return { status: "dropped" };
     }
     routeInboundPacket(packet);
+    // Only an authenticated (signed + verified + key-bound) packet yields a
+    // trusted nodeId. ROUTE_BEACON is accepted for routing liveness but its
+    // fromNodeId is unauthenticated, so it is NOT a basis for committing a
+    // deviceId→nodeId mapping.
+    return verifiedNodeId
+      ? { status: "verified", nodeId: verifiedNodeId }
+      : { status: "beacon" };
   }
 
   /**
@@ -969,9 +988,9 @@ export function useMeshTransport(myNodeId: string) {
     // Individual fragments are never relayed, ACKed, or delivered to the app.
     if (isFragmentEnvelope(parsed)) {
       const env = parsed as FragmentEnvelope;
-      // Peer resolution: the BLE sender of this fragment is the same device
-      // that sent the original packet (one-hop delivery only per fragment).
-      if (bleMsg.fromDeviceId) resolvePeerNodeId(bleMsg.fromDeviceId, env.fromNodeId);
+      // Individual fragments carry an UNVERIFIED fromNodeId — never commit a
+      // deviceId→nodeId mapping from them. Resolution happens only AFTER the
+      // packet is fully reassembled and cryptographically authenticated below.
       const reassembled = fragmentCollector.addFragment(env);
       if (!reassembled) {
         console.log(
@@ -984,18 +1003,25 @@ export function useMeshTransport(myNodeId: string) {
         `[MauriMesh][Reassembly] complete packetId=${reassembled.packetId}` +
         ` from ${env.fragmentCount} fragment(s)`
       );
-      verifyAndDispatch(reassembled);
+      const result = verifyAndDispatch(reassembled);
+      if (result.status === "verified" && bleMsg.fromDeviceId) {
+        resolvePeerNodeId(bleMsg.fromDeviceId, result.nodeId);
+      }
       return;
     }
 
     // ── Full-packet path (below FRAGMENT_CHUNK_MAX, no fragmentation) ─────────
     const packet = parsed as MeshPacket;
-    // Resolve BLE device ID → mesh node ID as soon as the first packet arrives.
-    // This ensures directed pings use the correct app-level node ID, not a BLE
-    // hardware address placeholder set during initial scan discovery.
-    // fromDeviceId is absent on locally-synthesised packets (e.g. bridge replay).
-    if (bleMsg.fromDeviceId) resolvePeerNodeId(bleMsg.fromDeviceId, packet.fromNodeId);
-    verifyAndDispatch(packet);
+    // Verify FIRST. The deviceId→nodeId mapping is committed only after the
+    // packet is authenticated (signed + signature-valid + key-bound), so a
+    // spoofed/unsigned/dropped packet can never poison peer identity state.
+    // Directed pings then use the correct app-level node ID rather than a BLE
+    // hardware-address placeholder. fromDeviceId is absent on locally
+    // synthesised packets (e.g. bridge replay).
+    const result = verifyAndDispatch(packet);
+    if (result.status === "verified" && bleMsg.fromDeviceId) {
+      resolvePeerNodeId(bleMsg.fromDeviceId, result.nodeId);
+    }
   }
 
   // Sync shared router registry on peer arrivals/departures

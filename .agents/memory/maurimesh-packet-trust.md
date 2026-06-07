@@ -34,6 +34,21 @@ that are easy to get wrong:
   GATT peripheral receive callback — must route through it, never call
   `routeInboundPacket` directly.
 
+## Trust ORDERING: never commit identity state before authentication
+- `resolvePeerNodeId(deviceId, fromNodeId)` mutates the deviceId→nodeId map from
+  the packet's `fromNodeId`. It MUST run only AFTER `verifyAndDispatch` returns
+  an authenticated result, never before.
+- **Why:** `fromNodeId` is attacker-controllable. Resolving before verification
+  poisons peer identity (misrouting / heartbeat confusion / DoS) even for packets
+  that are later dropped (bad sig, key conflict, unsigned).
+- **How to apply:** `verifyAndDispatch` returns `VerifyDispatchResult`
+  (`verified`|`beacon`|`dropped`); call `resolvePeerNodeId` only on `verified`,
+  using the returned nodeId — for BOTH the full-packet and fragment paths
+  (fragments resolve only after full reassembly + verification). `beacon`
+  (unsigned ROUTE_BEACON) and `dropped` must not touch identity state.
+  ROUTE_BEACON liveness still works: PONG uses `refreshPeerActivity(nodeId)` and
+  peer.nodeId from the scan path, not packet-driven resolution.
+
 ## Outbound: fail-closed at a single egress choke point
 - `isOutboundAllowed(packet)` requires both `signature` AND `fromPublicKey` for
   every non-ROUTE_BEACON packet. Apply it at EVERY BLE egress: `trySendViaBle`
