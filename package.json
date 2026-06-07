@@ -20,6 +20,8 @@
     "check:no-js-ext": "npx --yes pnpm@9.15.4 --filter @workspace/scripts run check-no-js-ext",
     "dev:client": "npx --yes pnpm@9.15.4 --filter @workspace/maurimesh run dev",
     "api": "tsx server/index.ts",
+    "dev": "tsx server/index.ts",
+    "expo:start": "npx expo start --clear --port 8082",
     "check": "tsc --noEmit"
   },
   "private": true,
