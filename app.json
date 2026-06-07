@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "MauriMesh",
-    "slug": "MauriMesh",
+    "slug": "mauri-mesh",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,12 +30,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "ced770ee-bb3c-4b5a-8faa-3f11f11ca8b5"
+        "projectId": "58787f88-6d39-402d-a0ec-91458f5f6246"
       },
       "projectName": "MauriMesh Messenger",
       "truth": "Replit preview does not prove native BLE. APK/device validation required."
     },
-    "owner": "mauri-mesh-network",
+    "owner": "maurimesh-network",
     "scheme": "maurimesh"
   },
   "owner": "mauri-mesh-network",
