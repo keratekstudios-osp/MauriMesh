@@ -100,7 +100,11 @@ function isOutboundAllowed(packet: MeshPacket): boolean {
 type VerifyDispatchResult =
   | { status: "verified"; nodeId: string }
   | { status: "beacon" }
+  | { status: "pending" }
   | { status: "dropped" };
+
+/** Max signed inbound packets buffered during the binding-hydration window. */
+const MAX_PENDING_INBOUND = 100;
 
 function makeBleMsg(packet: MeshPacket): BleMessage {
   return {
@@ -418,6 +422,17 @@ export function useMeshTransport(myNodeId: string) {
    */
   const keyBindingRef = useRef(new KeyBindingStore());
 
+  /**
+   * Trust bindings are hydrated asynchronously from durable storage on mount.
+   * Until that completes, signed inbound packets are buffered rather than
+   * verified, so an attacker cannot win a "first-seen" race against a not-yet
+   * loaded binding (which `seed()` could never later correct). Set true once
+   * hydration resolves (or fails); the buffer is then drained.
+   */
+  const bindingsReadyRef = useRef(false);
+  /** Signed inbound packets buffered during the binding-hydration window. */
+  const pendingInboundRef = useRef<MeshPacket[]>([]);
+
   /** Update a peer's RouteScore in the Zustand store after a metrics change. */
   function refreshScore(peerId: string): void {
     const peer = blePeersRef.current.find((p) => p.nodeId === peerId);
@@ -480,6 +495,22 @@ export function useMeshTransport(myNodeId: string) {
   function verifyAndDispatch(packet: MeshPacket): VerifyDispatchResult {
     let verifiedNodeId: string | null = null;
     if (packet.fromPublicKey && packet.signature) {
+      // Trust bindings not hydrated yet: buffer (bounded) instead of verifying,
+      // so a key-binding decision is never made against an empty store. Drained
+      // in mount order once hydration completes. ROUTE_BEACON and unsigned
+      // packets fall through to the normal logic below (they never touch
+      // bindings), so liveness is unaffected during the window.
+      if (!bindingsReadyRef.current) {
+        if (pendingInboundRef.current.length < MAX_PENDING_INBOUND) {
+          pendingInboundRef.current.push(packet);
+        } else {
+          console.log(
+            `[MauriMesh][PendingDrop] inbound buffer full, dropping signed` +
+            ` ${packet.type} packetId=${packet.packetId} during hydration`
+          );
+        }
+        return { status: "pending" };
+      }
       if (!verifyPacketSignature(packet)) {
         console.log(
           `[MauriMesh][IdentityDrop] invalid signature packetId=${packet.packetId}` +
@@ -595,11 +626,26 @@ export function useMeshTransport(myNodeId: string) {
     // PREVIOUSLY VERIFIED packets only (never from unauthenticated BLE
     // advertisements) so an attacker cannot rebind a known identity after a
     // restart.
+    const markBindingsReadyAndDrain = () => {
+      bindingsReadyRef.current = true;
+      // Drain packets buffered during hydration, in arrival order, now that the
+      // trust store is seeded. These come from native/JS BLE callbacks without
+      // device context, so deviceId→nodeId resolution is skipped for them (a
+      // negligible, short-window effect); authenticity is fully enforced.
+      const pending = pendingInboundRef.current;
+      pendingInboundRef.current = [];
+      for (const p of pending) verifyAndDispatch(p);
+    };
     loadVerifiedIdentities()
       .then((ids) => {
         for (const id of ids) keyBindingRef.current.seed(id.nodeId, id.publicKey);
+        markBindingsReadyAndDrain();
       })
-      .catch(() => {});
+      .catch(() => {
+        // Even on load failure, open the gate so we don't buffer forever — this
+        // degrades to TOFU from an empty store, the original first-use behavior.
+        markBindingsReadyAndDrain();
+      });
 
     loadOrCreateCryptoIdentity(myNodeId).then((id) => {
       identityRef.current = id;

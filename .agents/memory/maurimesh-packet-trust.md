@@ -49,6 +49,21 @@ that are easy to get wrong:
   ROUTE_BEACON liveness still works: PONG uses `refreshPeerActivity(nodeId)` and
   peer.nodeId from the scan path, not packet-driven resolution.
 
+## Startup race: gate verification on trust-store hydration
+- Trust bindings (`keyBindingRef`) hydrate ASYNC from durable storage in a mount
+  effect, but BLE receive is live immediately. If verification runs before
+  hydration, an attacker's validly-signed packet claiming a known nodeId wins
+  `first-seen` and poisons the in-memory binding; `seed()` is non-overwriting so
+  later hydration can't correct it.
+- **Fix:** `bindingsReadyRef` flag + `pendingInboundRef` bounded buffer
+  (MAX_PENDING_INBOUND). While not ready, signed packets are buffered (return
+  `status:"pending"`) not verified; ROUTE_BEACON/unsigned fall through (they
+  never touch bindings, liveness unaffected). On hydration resolve OR reject,
+  set ready and drain the buffer in arrival order. Fail-open-to-empty on reject
+  = original TOFU-from-scratch, acceptable.
+- **How to apply:** any async-hydrated trust state must gate the decision that
+  reads it; buffer or fail-closed until ready — never decide against an empty store.
+
 ## Outbound: fail-closed at a single egress choke point
 - `isOutboundAllowed(packet)` requires both `signature` AND `fromPublicKey` for
   every non-ROUTE_BEACON packet. Apply it at EVERY BLE egress: `trySendViaBle`
