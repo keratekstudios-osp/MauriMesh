@@ -1,0 +1,52 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1
++
+Progress: resolved 1, reused 0, downloaded 1, added 0
+Progress: resolved 1, reused 0, downloaded 1, added 1, done
+Running 18 checks on your project...
+14/18 checks passed. 4 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check for issues with Metro config
+It looks like that you are using a custom metro.config.js that does not extend "expo/metro-config". This can lead to unexpected and hard to debug issues. Learn more: https://docs.expo.dev/guides/customizing-metro/
+Advice:
+Update your "metro.config.js" to extend "expo/metro-config".
+
+✖ Check that required peer dependencies are installed
+Missing peer dependency: expo-font
+Required by: @expo/vector-icons
+Missing peer dependency: expo-linking
+Required by: expo-router
+Missing peer dependency: react-native-screens
+Required by: expo-router
+Advice:
+Install missing required peer dependencies with "npx expo install expo-font expo-linking react-native-screens"
+Your app may crash outside of Expo Go without these dependencies. Native module peer dependencies must be installed directly.
+
+✖ Check for app config fields that may not be synced in a non-CNG project
+This project contains native project folders but also has native configuration properties in app.json, indicating it is configured to use Prebuild. When the android/ios folders are present, EAS Build will not sync the following properties: orientation, icon, userInterfaceStyle, splash, ios, android. 
+
+
+✖ Check that packages match versions required by installed Expo SDK
+
+❗ Major version mismatches
+package              expected  found    
+@shopify/flash-list  2.0.2     1.8.3    
+expo-video           ~3.0.16   55.0.17  
+babel-preset-expo    ~54.0.10  55.0.21  
+
+🔧 Patch version mismatches
+package              expected  found    
+expo                 ~54.0.35  54.0.34  
+expo-router          ~6.0.24   6.0.23   
+
+Changelogs:
+- expo-router → https://github.com/expo/expo/blob/sdk-54/packages/expo-router/CHANGELOG.md
+- expo-video → https://github.com/expo/expo/blob/sdk-54/packages/expo-video/CHANGELOG.md
+
+5 packages out of date.
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+To ignore specific packages, add them to "expo.install.exclude" in package.json. Learn more: https://expo.fyi/dependency-validation
+
+4 checks failed, indicating possible issues with the project.

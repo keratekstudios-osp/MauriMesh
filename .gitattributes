@@ -1,0 +1,2 @@
+MauriMesh-backup.zip filter=lfs diff=lfs merge=lfs -text
+MAURIMESH_WIRING_REPORT.md filter=lfs diff=lfs merge=lfs -text

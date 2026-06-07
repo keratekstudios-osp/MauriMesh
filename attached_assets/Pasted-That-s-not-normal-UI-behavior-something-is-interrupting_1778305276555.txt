@@ -1,0 +1,252 @@
+That’s not normal UI behavior—something is interrupting input focus or blocking the keyboard event chain. Treat this as a focus/keyboard conflict or render loop issue, not just a visual glitch.
+
+What it usually looks like
+
+
+---
+
+Root causes (ranked by likelihood in your build)
+
+1. Component re-render loop (most common)
+
+If your login screen is re-rendering continuously:
+
+TextInput loses focus every frame
+
+Keyboard opens → closes → opens → breaks typing
+
+
+Typical triggers:
+
+useState updating inside render cycle
+
+useEffect firing repeatedly without proper dependency array
+
+Navigation redirect running while typing
+
+
+
+---
+
+2. Navigation reset / route replace firing
+
+You already added:
+
+router.replace("/login")
+
+If something similar runs on the login screen:
+
+It constantly reloads the screen
+
+Input becomes unusable
+
+
+
+---
+
+3. Keyboard dismissal conflict
+
+If you wrapped the screen with:
+
+<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+
+or similar:
+
+Any tap triggers dismiss
+
+Even typing can trigger blur events
+
+
+
+---
+
+4. Broken layout / overlay blocking input
+
+Invisible layers can sit on top of inputs:
+
+absolute positioned views
+
+full-screen Pressable
+
+animated overlays
+
+
+Result:
+
+You tap input → actually hitting invisible layer
+
+
+
+---
+
+5. Expo / React Native version mismatch
+
+You already had:
+
+Cannot read properties of null (reading 'useState')
+
+This indicates:
+
+React / React DOM mismatch
+
+Hooks behaving unpredictably → can break input handling
+
+
+
+---
+
+Immediate verification (do this in order)
+
+Step 1 — Confirm if it’s a re-render loop
+
+Add this inside your login component:
+
+console.log("Login render");
+
+If it spams constantly → this is your issue
+
+
+---
+
+Step 2 — Lock the TextInput focus manually
+
+<TextInput
+  value={username}
+  onChangeText={setUsername}
+  autoFocus
+/>
+
+If it still loses focus → external interference
+
+
+---
+
+Step 3 — Remove ALL wrappers temporarily
+
+Strip your login screen down to this minimal test:
+
+import { View, TextInput } from "react-native";
+import { useState } from "react";
+
+export default function Test() {
+  const [text, setText] = useState("");
+
+  return (
+    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+      <TextInput
+        style={{ borderWidth: 1, padding: 10 }}
+        value={text}
+        onChangeText={setText}
+      />
+    </View>
+  );
+}
+
+Result interpretation:
+
+✅ Works → problem is in your UI layers
+
+❌ Still broken → environment/build issue
+
+
+
+---
+
+High-probability fix paths
+
+Fix A — Stop re-render loop
+
+Check for this pattern:
+
+useEffect(() => {
+  setState(...);
+});
+
+Correct it:
+
+useEffect(() => {
+  setState(...);
+}, []);
+
+
+---
+
+Fix B — Stop navigation during input
+
+Search your project for:
+
+router.replace
+router.push
+
+Make sure none run automatically on the login screen.
+
+
+---
+
+Fix C — Remove keyboard dismiss wrappers
+
+Temporarily remove:
+
+Keyboard.dismiss
+TouchableWithoutFeedback
+Pressable overlays
+
+
+---
+
+Fix D — Fix React mismatch (important from your logs)
+
+Run clean install:
+
+rm -rf node_modules
+rm -rf .expo
+rm -rf package-lock.json pnpm-lock.yaml
+
+pnpm install
+
+Then:
+
+npx expo start -c
+
+
+---
+
+Fix E — Check for overlay blockers
+
+Search for:
+
+position: "absolute"
+
+If any full-screen views exist → disable them
+
+
+---
+
+Reality check (based on your project state)
+
+From your earlier errors:
+
+React 19 + Expo mismatch
+
+Hooks failing (useState null)
+
+Complex navigation
+
+
+👉 Most likely cause: render loop OR React version conflict
+
+
+---
+
+If you want exact fix (fast path)
+
+Send me:
+
+Your login screen code
+
+Your _layout.tsx
+
+Any navigation logic
+
+
+I’ll pinpoint the exact line breaking input and give you a corrected version—no guessing, fully working.

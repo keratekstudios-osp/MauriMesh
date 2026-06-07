@@ -1,0 +1,95 @@
+// settings.tsx — TRUST-AWARE LOGOUT (drop-in)
+
+import { useState } from "react";
+import { Alert } from "react-native";
+import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+
+import {
+  stopMauriMeshBlePeripheral,
+  stopMauriMeshBleScan,
+} from "@/lib/mesh/nativeMauriMeshBle";
+
+import { sendMeshSystemEvent } from "@/lib/mesh/meshSystemEvents";
+import { getOrCreateNodeId } from "@/lib/mesh/deviceIdentity";
+import { markLocalNodeOffline } from "@/lib/mesh/meshNodeState";
+import { clearSession } from "@/lib/auth/session";
+
+export function useTrustLogout() {
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const nodeId = await getOrCreateNodeId();
+
+    try {
+      await sendMeshSystemEvent({
+        id: `leave-${nodeId}-${Date.now()}`,
+        type: "node_leave",
+        from: nodeId,
+        to: "broadcast",
+        body: JSON.stringify({
+          reason: "user_logout",
+        }),
+        timestamp: Date.now(),
+        ttl: 3,
+        hopCount: 0,
+      });
+    } catch {}
+
+    try {
+      await stopMauriMeshBlePeripheral();
+      await stopMauriMeshBleScan?.();
+    } catch {}
+
+    try {
+      await markLocalNodeOffline(nodeId);
+      await clearSession();
+    } catch {}
+
+    router.replace("/login");
+  }
+
+  return { handleLogout, loggingOut };
+}
+
+// lib/mesh/meshSystemEvents.ts
+
+import { sendMeshMessage } from "./useMeshTransport";
+
+export async function sendMeshSystemEvent(message: any) {
+  return sendMeshMessage({
+    ...message,
+    type: "system",
+  });
+}
+
+// lib/mesh/meshNodeState.ts
+
+const nodeState: Record<string, string> = {};
+
+export async function markLocalNodeOffline(nodeId: string) {
+  nodeState[nodeId] = "OFFLINE_LOGGED_OUT";
+}
+
+// lib/auth/session.ts
+
+export async function clearSession() {
+  // placeholder for future auth system
+  return true;
+}
+
+// lib/mesh/nativeMauriMeshBle.ts (ensure these exist)
+
+export async function stopMauriMeshBlePeripheral(): Promise<boolean> {
+  return true;
+}
+
+export async function stopMauriMeshBleScan(): Promise<boolean> {
+  return true;
+}

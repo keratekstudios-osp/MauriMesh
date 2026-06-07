@@ -1,0 +1,17 @@
+node_modules
+.git
+dist
+build
+coverage
+.cache
+.next
+.nuxt
+.vite
+.expo
+android/.gradle
+android/build
+ios/Pods
+package-lock.json
+npm-debug.log
+yarn-error.log
+.DS_Store

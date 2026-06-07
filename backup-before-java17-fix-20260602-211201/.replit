@@ -1,0 +1,74 @@
+modules = ["nodejs-24", "python-3.11"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[[ports]]
+localPort = 3000
+externalPort = 4200
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 8082
+externalPort = 5000
+
+[[ports]]
+localPort = 8083
+externalPort = 5173
+
+[[ports]]
+localPort = 19784
+externalPort = 3003
+
+[[ports]]
+localPort = 22961
+externalPort = 3002
+
+[[ports]]
+localPort = 23261
+externalPort = 3000
+
+[[ports]]
+localPort = 23397
+externalPort = 3001
+
+[[ports]]
+localPort = 24083
+externalPort = 80
+
+[[ports]]
+localPort = 24084
+externalPort = 6000
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-fa1c0844-92e2-4a92-886f-8093b86a10d9"

@@ -1,0 +1,17 @@
+[package]
+name = "maurimesh-core"
+version = "0.2.0"
+edition = "2021"
+description = "MauriMesh optional Rust core engine for packet, routing, ACK, queue, proof, simulation, and runtime truth."
+license = "UNLICENSED"
+
+[lib]
+name = "maurimesh_core"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "maurimesh-core-cli"
+path = "src/main.rs"
+
+[dependencies]

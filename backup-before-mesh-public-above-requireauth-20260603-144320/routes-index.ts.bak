@@ -1,0 +1,205 @@
+import { Router, type IRouter, type Request, type Response } from "express";
+import { timingSafeEqual, createHash } from "crypto";
+import { z } from "zod";
+import { requireAuth }    from "../middleware/requireAuth";
+import { requireOperator } from "../middleware/requireOperator";
+import healthRouter     from "./health";
+import authRouter       from "./auth";
+import appRouter        from "./routes";
+import easWebhookRouter from "./eas-webhook";
+import qaRouter         from "./qa";
+import aiMeshRouter     from "./ai-mesh";
+import trustRouter      from "./trust";
+import sfRouter         from "./store-forward";
+import callsRouter      from "./calls";
+import notifyRouter     from "./notifications";
+import otaRouter        from "./ota";
+import proofRouter      from "./proof";
+import truthRouter      from "./truth";
+import safetyRouter     from "./route-safety";
+import errorsRouter     from "./errors-ledger";
+import reportsRouter    from "./reports";
+import readinessRouter  from "./readiness";
+import peersRouter             from "./peers";
+import packetSchemaRouter      from "./packet-schema";
+import diagnosticsExtRouter    from "./diagnostics-extended";
+import integrityRouter         from "./integrity";
+import activityRouter, { activityStreamRouter } from "./activity";
+import { runtimeTruth } from "../runtime/RuntimeTruthEngine";
+import { proofLedgerEngine, PROOF_EVENT_TYPES, PROOF_RUNTIME_MODES } from "../runtime/ProofLedgerEngine";
+import { buildVariantEngine } from "../runtime/BuildVariantEngine";
+import type { ProofEntry } from "@workspace/db/schema";
+
+// ── Proof ledger query schema (Zod) ───────────────────────────────────────────
+const proofQuerySchema = z.object({
+  eventType:   z.enum(PROOF_EVENT_TYPES as unknown as [string, ...string[]]).optional(),
+  runtimeMode: z.enum(PROOF_RUNTIME_MODES as unknown as [string, ...string[]]).optional(),
+  page:        z.coerce.number().int().min(1).optional().default(1),
+  limit:       z.coerce.number().int().min(1).max(200).optional().default(25),
+});
+
+// ── Entry mapper: adds eventId + timestamp as canonical field-name aliases ─────
+function mapEntry(entry: ProofEntry) {
+  return { ...entry, eventId: entry.id, timestamp: entry.ts };
+}
+
+const router: IRouter = Router();
+
+// ── Public routes (no auth required) ─────────────────────────────────────────
+// health:       liveness / readiness probes (platform and load balancers)
+// auth:         login / verify / logout (the endpoints that *issue* credentials)
+// eas-webhook:  EAS build notifications verified by HMAC-SHA256 signature only;
+//               mounting it here keeps the Expo/EAS delivery path intact without
+//               requiring a bearer token on incoming webhook calls.
+// truth/status: read-only subsystem truth table; safe to expose publicly —
+//               it contains no credentials, no user data, only runtime mode flags.
+router.use(healthRouter);
+router.use(authRouter);
+router.use(easWebhookRouter);
+router.use(packetSchemaRouter); // GET /packet-schema — public schema metadata
+router.use(activityStreamRouter); // GET /activity/stream — SSE; authenticates via short-lived ?ticket= (see POST /activity/stream-ticket)
+
+router.get("/truth/status", (_req: Request, res: Response): void => {
+  res.json({
+    ok:       true,
+    features: runtimeTruth.getAll(),
+    summary:  runtimeTruth.summary(),
+  });
+});
+
+// GET /build-variant — returns active build variant config + current violations.
+// Public: no credentials exposed; safe for dashboard and mobile app polling.
+router.get("/build-variant", (_req: Request, res: Response): void => {
+  const features    = runtimeTruth.getAll();
+  const violations  = buildVariantEngine.getAllViolations(features);
+  res.json({
+    ok:         true,
+    active:     buildVariantEngine.active,
+    violations,
+    violationCount: violations.length,
+  });
+});
+
+// POST /truth/report-engine-status — requires X-Mesh-Api-Key header to prevent
+// unauthenticated callers from forging verified subsystem state.
+// The mobile APK must include the key it received at login.
+const ENGINE_SUBSYSTEM_MAP_PUBLIC: Record<string, string> = {
+  routing: "relay", packet_engine: "p2p_send", store_forward: "store_forward",
+  crypto: "encryption", ble_scan: "ble_scan", ble_advertise: "ble_advertise",
+  gatt_server: "ble_scan",
+  // Background runtime contract keys — authoritative gate for BLE truth until
+  // two-phone proof promotes them to real_native.
+  background_ble_scan: "ble_scan", background_ble_advertise: "ble_advertise",
+  foreground_service: "native_bridge",
+};
+const VALID_ENGINE_MODES_PUBLIC = new Set([
+  "real_native", "web_simulation", "api_simulation", "partial", "unavailable",
+]);
+router.post("/truth/report-engine-status", (req: Request, res: Response): void => {
+  const meshApiKey  = process.env["MESH_API_KEY"] ?? "";
+  const providedKey = String(req.headers["x-mesh-api-key"] ?? "");
+  // Use timing-safe comparison to prevent timing-oracle attacks on the key.
+  // Hash both sides first so timingSafeEqual receives equal-length buffers.
+  const hash = (s: string) => createHash("sha256").update(s).digest();
+  const keyMatch = meshApiKey.length > 0 && timingSafeEqual(hash(providedKey), hash(meshApiKey));
+  if (!keyMatch) {
+    res.status(401).json({ ok: false, error: "Unauthorized: X-Mesh-Api-Key header required" });
+    return;
+  }
+  const body = req.body as Record<string, unknown> | undefined;
+  const subsystems = body?.subsystems as Record<string, string> | undefined;
+  if (!subsystems || typeof subsystems !== "object" || Array.isArray(subsystems)) {
+    res.status(400).json({ ok: false, error: "subsystems object required" });
+    return;
+  }
+  // Rate-limit surface: max 20 keys
+  if (Object.keys(subsystems).length > 20) {
+    res.status(400).json({ ok: false, error: "too many subsystem keys" });
+    return;
+  }
+  const updated: string[] = [];
+  const bleProofEvents: string[] = [];
+  for (const [key, status] of Object.entries(subsystems)) {
+    if (!VALID_ENGINE_MODES_PUBLIC.has(status)) continue;
+    const feat = ENGINE_SUBSYSTEM_MAP_PUBLIC[key];
+    if (!feat) continue;
+    const r = runtimeTruth.verify(feat, status as Parameters<typeof runtimeTruth.verify>[1]);
+    if (r) {
+      updated.push(feat);
+      if (status === "real_native") {
+        if (key === "ble_scan" || key === "gatt_server") bleProofEvents.push("native_ble_scan_started");
+        if (key === "ble_advertise") bleProofEvents.push("native_ble_advertise_started");
+      }
+    }
+  }
+  const anyReal = Object.values(subsystems).some((s) => s === "real_native");
+  if (anyReal) { runtimeTruth.verify("native_bridge", "real_native"); updated.push("native_bridge"); }
+  for (const eventType of bleProofEvents) {
+    proofLedgerEngine.record({
+      eventType,
+      source:        "mobile_truth_report",
+      runtimeMode:   "real_native",
+      verified:      true,
+      rawLogExcerpt: `Native BLE event reported via public /truth/report-engine-status`,
+    }).catch(() => { /* best-effort */ });
+  }
+  res.json({ ok: true, updated, features: runtimeTruth.getAll() });
+});
+
+// ── Authentication gate ───────────────────────────────────────────────────────
+// Every route mounted below this line requires a valid Bearer token.
+// Security: proof-ledger and all operational routes MUST remain below this
+// gate. The proof ledger contains device/peer identifiers, packet IDs, ACK IDs,
+// and raw log excerpts that are operationally sensitive. Exposing them
+// anonymously would allow any caller to map active peers and monitor delivery
+// activity without authentication.
+router.use(requireAuth);
+
+// ── Proof ledger — protected: contains device/peer identifiers and raw log excerpts ──
+router.get("/proof-ledger", requireOperator, async (req: Request, res: Response): Promise<void> => {
+  const parsed = proofQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ ok: false, error: "Invalid query parameters", issues: parsed.error.issues });
+    return;
+  }
+  const { eventType, runtimeMode, page, limit } = parsed.data;
+  const { entries, total } = await proofLedgerEngine.getAll({ eventType, runtimeMode, page, limit });
+  res.json({
+    ok:    true,
+    entries: entries.map(mapEntry),
+    count:   entries.length,
+    total,
+    page,
+    limit,
+    pages:        Math.max(1, Math.ceil(total / limit)),
+    eventTypes:   PROOF_EVENT_TYPES,
+    runtimeModes: PROOF_RUNTIME_MODES,
+  });
+});
+
+router.get("/proof-ledger/latest", requireOperator, async (_req: Request, res: Response): Promise<void> => {
+  const entry = await proofLedgerEngine.getLatest();
+  res.json({ ok: true, entry: entry ? mapEntry(entry) : null });
+});
+
+// ── Protected operational routes ──────────────────────────────────────────────
+router.use(appRouter);
+router.use(qaRouter);
+router.use(aiMeshRouter);
+router.use(trustRouter);
+router.use(sfRouter);
+router.use(callsRouter);
+router.use(notifyRouter);
+router.use(otaRouter);
+router.use(proofRouter);
+router.use(truthRouter);
+router.use(safetyRouter);
+router.use(errorsRouter);
+router.use(reportsRouter);
+router.use(readinessRouter);
+router.use(peersRouter);
+router.use(diagnosticsExtRouter);
+router.use(integrityRouter);
+router.use(activityRouter);
+
+export default router;

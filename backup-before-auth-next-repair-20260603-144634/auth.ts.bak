@@ -1,0 +1,269 @@
+import { Router, type Request, type Response } from "express";
+import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { db } from "@workspace/db";
+import { meshUsers, meshSessions } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
+import { rateLimitMiddleware } from "../middleware/rateLimit";
+import { evictTokenFromCache } from "../middleware/requireAuth";
+
+const authRouter = Router();
+const scryptAsync = promisify(scrypt);
+
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SCRYPT_KEYLEN = 64;
+
+// ── Password hashing ──────────────────────────────────────────────────────────
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const derived = (await scryptAsync(password, salt, SCRYPT_KEYLEN)) as Buffer;
+  return `${salt}:${derived.toString("hex")}`;
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const [salt, hashHex] = stored.split(":");
+  if (!salt || !hashHex) return false;
+  const derived = (await scryptAsync(password, salt, SCRYPT_KEYLEN)) as Buffer;
+  const storedBuf = Buffer.from(hashHex, "hex");
+  if (derived.length !== storedBuf.length) return false;
+  return timingSafeEqual(derived, storedBuf);
+}
+
+// ── Admin key guard (server-only, never sent to clients) ──────────────────────
+
+function verifyAdminKey(candidate: string): boolean {
+  const key = process.env["MESH_API_KEY"] ?? "";
+  if (!key) return false;
+  const expectedBuf  = Buffer.from(key, "utf8");
+  const candidateBuf = Buffer.from(candidate, "utf8");
+  if (candidateBuf.length !== expectedBuf.length) return false;
+  return timingSafeEqual(candidateBuf, expectedBuf);
+}
+
+function verifyOperatorKey(candidate: string): boolean {
+  const key = process.env["MESH_OPERATOR_KEY"] ?? "";
+  if (!key) return false;
+  const expectedBuf  = Buffer.from(key, "utf8");
+  const candidateBuf = Buffer.from(candidate, "utf8");
+  if (candidateBuf.length !== expectedBuf.length) return false;
+  return timingSafeEqual(candidateBuf, expectedBuf);
+}
+
+function generateNodeId(): string {
+  return "node-" + randomBytes(6).toString("hex");
+}
+
+function generateToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+// ── Rate limiters ─────────────────────────────────────────────────────────────
+
+const loginRateLimit = rateLimitMiddleware({
+  maxRequests: 10,
+  windowMs: 60_000,
+  keyPrefix: "auth:login",
+  message: "Too many login attempts. Please wait one minute before trying again.",
+});
+
+const registerRateLimit = rateLimitMiddleware({
+  maxRequests: 5,
+  windowMs: 60_000,
+  keyPrefix: "auth:register",
+  message: "Too many registration attempts.",
+});
+
+// ── POST /auth/register ───────────────────────────────────────────────────────
+// Admin-only endpoint. Requires the server-side MESH_API_KEY supplied as
+// Authorization: Bearer <key>. This secret is never distributed to clients.
+
+authRouter.post("/auth/register", registerRateLimit, async (req: Request, res: Response): Promise<void> => {
+  const authHeader = req.headers.authorization ?? "";
+  const adminKey = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+
+  if (!process.env["MESH_API_KEY"]) {
+    res.status(503).json({ ok: false, error: "Auth not configured. Set MESH_API_KEY on the server." });
+    return;
+  }
+
+  if (!adminKey || !verifyAdminKey(adminKey)) {
+    res.status(401).json({ ok: false, error: "Admin key required." });
+    return;
+  }
+
+  const body = req.body as Record<string, unknown> | undefined;
+  const username = typeof body?.username === "string" ? body.username.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+
+  if (!username || !password) {
+    res.status(400).json({ ok: false, error: "username and password required" });
+    return;
+  }
+
+  if (password.length < 12) {
+    res.status(400).json({ ok: false, error: "password must be at least 12 characters" });
+    return;
+  }
+
+  try {
+    const existing = await db
+      .select({ username: meshUsers.username })
+      .from(meshUsers)
+      .where(eq(meshUsers.username, username))
+      .limit(1);
+
+    if (existing.length > 0) {
+      res.status(409).json({ ok: false, error: "Username already registered." });
+      return;
+    }
+
+    const passwordHash = await hashPassword(password);
+    const nodeId = generateNodeId();
+
+    await db.insert(meshUsers).values({ username, passwordHash, nodeId });
+
+    res.status(201).json({ ok: true, username, nodeId });
+  } catch {
+    res.status(500).json({ ok: false, error: "User store unavailable" });
+  }
+});
+
+// ── POST /auth/login ──────────────────────────────────────────────────────────
+// Verifies username + password against the meshUsers registry.
+// Issues a bearer token bound to the registered user's stable nodeId.
+
+authRouter.post("/auth/login", loginRateLimit, async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as Record<string, unknown> | undefined;
+  const username    = typeof body?.username    === "string" ? body.username.trim() : "";
+  const password    = typeof body?.password    === "string" ? body.password        : "";
+  const operatorKey = typeof body?.operatorKey === "string" ? body.operatorKey     : "";
+
+  if (!username || !password) {
+    res.status(400).json({ ok: false, error: "username and password required" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select()
+      .from(meshUsers)
+      .where(eq(meshUsers.username, username))
+      .limit(1);
+
+    const user = rows[0];
+
+    // Use a constant-time failure path to avoid username enumeration via timing
+    const passwordOk = user
+      ? await verifyPassword(password, user.passwordHash)
+      : (await verifyPassword(password, "dummy:0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), false);
+
+    if (!user || !passwordOk) {
+      res.status(401).json({ ok: false, error: "Invalid username or password." });
+      return;
+    }
+
+    const role = (operatorKey && verifyOperatorKey(operatorKey)) ? "operator" : "user";
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+    await db.insert(meshSessions).values({
+      token,
+      nodeId: user.nodeId,
+      username: user.username,
+      role,
+      expiresAt,
+    });
+
+    res.json({
+      ok: true,
+      token,
+      nodeId: user.nodeId,
+      username: user.username,
+      role,
+      expiresAt: expiresAt.toISOString(),
+    });
+  } catch {
+    res.status(500).json({ ok: false, error: "Session store unavailable" });
+  }
+});
+
+// ── POST /auth/verify ─────────────────────────────────────────────────────────
+
+authRouter.post("/auth/verify", async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as Record<string, unknown> | undefined;
+  const authHeader = req.headers.authorization ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = bearerToken || (typeof body?.token === "string" ? body.token : "");
+
+  
+// MAURIMESH_PUBLIC_MESH_AUTH_BYPASS
+if (
+  req &&
+  (
+    (req.path && req.path.startsWith("/api/mesh-public/")) ||
+    (req.url && req.url.startsWith("/api/mesh-public/"))
+  )
+) {
+  return next();
+}
+
+if (!token) {
+    res.status(400).json({ ok: false, error: "token required" });
+    return;
+  }
+
+  try {
+    const rows = await db
+      .select()
+      .from(meshSessions)
+      .where(eq(meshSessions.token, token))
+      .limit(1);
+
+    const session = rows[0];
+    if (!session) {
+      res.status(401).json({ ok: false, error: "Invalid token" });
+      return;
+    }
+
+    if (session.expiresAt < new Date()) {
+      res.status(401).json({ ok: false, error: "Token expired" });
+      return;
+    }
+
+    res.json({
+      ok: true,
+      nodeId: session.nodeId,
+      username: session.username,
+      expiresAt: session.expiresAt.toISOString(),
+    });
+  } catch {
+    res.status(500).json({ ok: false, error: "Session store unavailable" });
+  }
+});
+
+// ── POST /auth/logout ─────────────────────────────────────────────────────────
+
+authRouter.post("/auth/logout", async (req: Request, res: Response): Promise<void> => {
+  const authHeader = req.headers.authorization ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const body = req.body as Record<string, unknown> | undefined;
+  const token = bearerToken || (typeof body?.token === "string" ? body.token : "");
+
+  if (token) {
+    // Evict from in-memory cache immediately so the token is rejected by
+    // requireAuth on the very next request, not after the 30-second TTL.
+    evictTokenFromCache(token);
+    try {
+      await db.delete(meshSessions).where(eq(meshSessions.token, token));
+    } catch {
+      // best-effort — cache eviction above prevents immediate reuse; if the DB
+      // delete fails transiently the token may be re-cached on the next request
+      // but its TTL will still expire normally.
+    }
+  }
+
+  res.json({ ok: true });
+});
+
+export default authRouter;

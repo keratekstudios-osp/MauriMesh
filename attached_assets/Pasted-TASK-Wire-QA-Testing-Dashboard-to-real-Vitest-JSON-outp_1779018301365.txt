@@ -1,0 +1,144 @@
+TASK: Wire QA / Testing Dashboard to real Vitest JSON output.
+
+RULES:
+- Do not delete the existing QA dashboard UI.
+- Do not fake test results.
+- Keep current mock scaffold as fallback only.
+- If no real test report exists, show: "No real QA report found — run tests first."
+- Preserve current visual design.
+
+IMPLEMENT:
+
+1. Install testing dependencies if missing:
+pnpm add -D vitest @vitest/ui
+
+2. Create or update vitest.config.ts:
+
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: "node",
+    reporters: ["default", "json"],
+    outputFile: {
+      json: "./qa-results/vitest-results.json"
+    },
+    coverage: {
+      reporter: ["text", "json-summary"]
+    }
+  }
+});
+
+3. Add package.json scripts without removing existing scripts:
+
+"test": "vitest run",
+"test:watch": "vitest",
+"test:ui": "vitest --ui",
+"qa:run": "vitest run --reporter=json --outputFile=./qa-results/vitest-results.json"
+
+4. Create API endpoint:
+
+GET /api/qa/results
+
+It must:
+- read ./qa-results/vitest-results.json
+- return parsed real Vitest results
+- return fallback state if missing
+- never crash server if file is missing or malformed
+
+5. Add parser:
+
+Create:
+src/qa/parseVitestResults.ts
+
+It must convert Vitest JSON into:
+
+{
+  source: "vitest" | "fallback",
+  generatedAt: string,
+  totalTests: number,
+  passedTests: number,
+  failedTests: number,
+  skippedTests: number,
+  passRate: number,
+  categories: [
+    {
+      name: string,
+      type: string,
+      pass: number,
+      fail: number,
+      skip: number,
+      durationMs: number,
+      status: "pass" | "fail" | "warning"
+    }
+  ],
+  failures: [
+    {
+      testName: string,
+      file: string,
+      message: string
+    }
+  ]
+}
+
+6. Category mapping by file path:
+
+tests/ble or __tests__/ble -> BLE Discovery
+tests/routing or __tests__/routing -> Mesh Routing
+tests/ack or __tests__/ack -> ACK Engine
+tests/crypto or tests/encryption -> Encryption/Keys
+tests/store-forward -> Store & Forward
+tests/ui -> UI Smoke Tests
+
+Unknown tests go to:
+General
+
+7. Update QA dashboard frontend:
+
+Replace hardcoded mock counts with fetch from:
+
+/api/qa/results
+
+Display:
+- source badge: REAL VITEST REPORT or MOCK FALLBACK
+- total tests
+- pass rate
+- category cards
+- failures list
+
+8. Keep the warning banner only when fallback/mock is used.
+
+If real report is loaded, banner should say:
+REAL QA DATA — loaded from Vitest report.
+
+9. Add command help text on QA page:
+
+Run:
+pnpm qa:run
+
+Then refresh dashboard.
+
+10. Validation:
+
+Run:
+pnpm qa:run
+pnpm typecheck
+
+Then open:
+/advanced/qa
+
+Expected:
+- no "mock data scaffold only" if real report exists
+- dashboard shows real test counts
+- failures list shows actual failed tests
+- missing result file does not crash
+- TypeScript passes
+
+FINAL REPORT REQUIRED:
+1. Files changed
+2. Scripts added
+3. API endpoint created
+4. Whether vitest-results.json was generated
+5. Real test count loaded
+6. Remaining failing tests by name

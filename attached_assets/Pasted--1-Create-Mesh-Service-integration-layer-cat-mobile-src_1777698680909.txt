@@ -1,0 +1,103 @@
+# 1. Create Mesh Service (integration layer)
+
+cat > mobile/src/lib/mesh/mesh-service.ts <<'EOF'
+import {
+  IntelligentMeshRouter,
+  StoreForwardQueue,
+  MeshPacket,
+  MeshNode
+} from "./maurimesh-intelligent-contract";
+
+const router = new IntelligentMeshRouter();
+const queue = new StoreForwardQueue();
+
+const DEVICE_ID = "device-" + Math.random().toString(36).slice(2);
+
+export function registerNode(node: MeshNode) {
+  router.registerNode(node);
+}
+
+export function createMessagePacket(toNodeId: string, message: string): MeshPacket {
+  return {
+    packetId: crypto.randomUUID(),
+    type: "CHAT_MESSAGE",
+    fromNodeId: DEVICE_ID,
+    toNodeId,
+    routePath: [DEVICE_ID],
+    lane: "BLE",
+    ttl: 6,
+    createdAt: Date.now(),
+    priority: 5,
+    payload: message,
+    checksum: ""
+  };
+}
+
+export function handleIncomingPacket(packet: MeshPacket, sendFn: (p: MeshPacket) => void) {
+  if (!router.shouldAcceptPacket(packet)) return;
+
+  // If message is for this device
+  if (packet.toNodeId === DEVICE_ID) {
+    router.markDelivered(packet.packetId);
+
+    if (packet.type === "CHAT_MESSAGE") {
+      console.log("MESSAGE RECEIVED:", packet.payload);
+
+      // send ACK
+      const ack: MeshPacket = {
+        ...packet,
+        type: "ACK",
+        toNodeId: packet.fromNodeId,
+        fromNodeId: DEVICE_ID,
+        packetId: crypto.randomUUID(),
+        routePath: [DEVICE_ID],
+        ttl: 4
+      };
+
+      sendFn(ack);
+    }
+
+    return;
+  }
+
+  // Relay
+  const route = router.selectBestRoute(packet.toNodeId);
+
+  if (!route) {
+    queue.enqueue(packet);
+    return;
+  }
+
+  const relay = router.prepareRelayPacket(packet, route.nodeId);
+
+  if (relay) {
+    sendFn(relay);
+  }
+}
+
+export function sendMessage(toNodeId: string, message: string, sendFn: (p: MeshPacket) => void) {
+  const packet = createMessagePacket(toNodeId, message);
+
+  const route = router.selectBestRoute(toNodeId);
+
+  if (!route) {
+    queue.enqueue(packet);
+    return;
+  }
+
+  sendFn(packet);
+}
+
+export function flushQueue(sendFn: (p: MeshPacket) => void) {
+  const pending = [...queue["queue"]];
+
+  for (const packet of pending) {
+    const route = router.selectBestRoute(packet.toNodeId);
+
+    if (route) {
+      sendFn(packet);
+      queue.remove(packet.packetId);
+    }
+  }
+}
+EOF

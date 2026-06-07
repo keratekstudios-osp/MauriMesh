@@ -1,0 +1,196 @@
+Paste this whole block into **Replit Agent**:
+
+```txt
+STRICT TASK: Complete MauriMesh Messenger inside Replit exactly to the designed direction.
+
+OBJECTIVE:
+Finish every component that can be completed in Replit:
+- Premium world-class UI
+- Full navigation wiring
+- Login-first flow
+- Dashboard
+- Chat
+- Settings
+- Add friend QR/search shell
+- Living Mesh visualizer simulation
+- Mesh API fallback
+- Pixel Calling UI shell
+- Replit-safe backend health/status API
+- TypeScript clean
+- Expo web preview working
+
+DO NOT:
+- Delete existing working code
+- Rebuild from scratch
+- Remove BLE, relay, ACK, TTL, dedupe, fragmentation, RouteScore, store-forward logic
+- Claim Replit proves real BLE
+- Claim simulation is live
+- Break current build
+- Change project identity away from MauriMesh Messenger
+
+DESIGN STANDARD:
+The UI must match the high-end splash/NDA visual direction:
+- Black / deep navy / greenstone / emerald / white
+- Premium glass cards
+- Glowing green web/mesh energy
+- Expensive enterprise finish
+- Clean typography
+- Rounded panels
+- Strong contrast
+- No cheap default Expo look
+- MauriMesh name must stand out
+- Every screen must feel part of one system
+
+CORE ROUTES REQUIRED:
+app/index.tsx redirects to /login
+app/login.tsx
+app/dashboard.tsx
+app/chat.tsx
+app/settings.tsx
+app/add-friend.tsx
+app/living-mesh.tsx
+app/mesh-status.tsx
+app/pixel-calling.tsx
+
+REQUIRED STRUCTURE:
+src/theme/mauriTheme.ts
+src/lib/api.ts
+src/lib/meshClient.ts
+src/lib/simulation.ts
+src/components/AppShell.tsx
+src/components/MauriButton.tsx
+src/components/StatusPill.tsx
+src/components/MeshSignalCard.tsx
+src/components/LivingMeshCanvas.tsx
+src/components/ChatBubble.tsx
+server/index.ts
+
+FIRST ACTION:
+Audit existing files before editing:
+pwd
+ls
+find . -maxdepth 4 -type f | sort | sed 's#^\./##' | head -400
+
+Then patch only what is needed.
+
+IMPLEMENTATION RULES:
+1. Preserve existing architecture.
+2. Add missing screens/components only.
+3. If a file exists, merge carefully.
+4. All screens must import shared theme.
+5. All buttons must navigate correctly.
+6. All unavailable native features must show safe fallback labels.
+7. Mesh API unavailable must never crash the app.
+8. Simulated mesh must be labelled SIMULATION.
+9. Pixel Calling must be labelled UI SHELL ONLY until native proof.
+10. Settings logout must router.replace("/login").
+
+VISUAL REQUIREMENTS FOR EVERY SCREEN:
+- Use dark background
+- Use greenstone highlights
+- Use premium cards
+- Use consistent spacing
+- Use readable white text
+- Use status pills
+- Avoid plain default UI
+- No unfinished placeholder unless clearly labelled as future native proof
+
+FUNCTIONAL REQUIREMENTS:
+Login:
+- First screen user sees
+- Premium MauriMesh branding
+- Button enters dashboard
+
+Dashboard:
+- Central command screen
+- Cards/buttons to Chat, Living Mesh, Add Friend, Pixel Calling, Mesh Status, Settings
+- Shows mesh status safely
+
+Chat:
+- Premium messenger layout
+- Message bubbles
+- Send input shell
+- No fake BLE claim
+
+Living Mesh:
+- Visual node map
+- Route beams
+- Simulation label unless API live
+- Uses meshClient fallback
+
+Add Friend:
+- QR visual shell
+- Scan QR button
+- Search Nearby Mesh button
+- Device proof warning
+
+Pixel Calling:
+- Premium call UI
+- Start/end call shell
+- Label as UI SHELL ONLY
+- No fake real video claim
+
+Settings:
+- Language shell
+- Runtime notice
+- Logout button
+- Premium design
+
+Mesh Status:
+- API status
+- Node count
+- Route count
+- LIVE/SIMULATION/UNAVAILABLE status
+
+REPLIT BACKEND:
+Create server/index.ts with:
+- GET /api/health
+- GET /api/mesh/status
+Return simulation only and clearly state not live BLE.
+
+PACKAGE SCRIPTS:
+Ensure package.json has:
+"start": "expo start --web"
+"dev": "expo start --web"
+"typecheck": "tsc --noEmit"
+"check": "tsc --noEmit"
+"api": "tsx server/index.ts"
+
+If tsx missing:
+install tsx as dev dependency using the existing package manager.
+
+ENV:
+Create .env.example:
+EXPO_PUBLIC_MESH_API_URL=
+
+If empty, app must use simulation fallback.
+
+QUALITY GATE:
+After changes run:
+npx tsc --noEmit
+npx expo start --clear
+
+If command fails:
+- fix the exact error
+- do not stop at first failure
+- do not delete systems to make errors disappear
+- preserve original engineering
+- rerun until clean or report exact remaining blocker
+
+FINAL REPORT MUST INCLUDE:
+1. Files created
+2. Files modified
+3. Navigation routes verified
+4. TypeScript result
+5. Expo result
+6. Replit-complete items
+7. Items that still require APK/phones/Mac/native proof
+
+REPLIT COMPLETION TARGET:
+Complete 100% of what Replit can complete.
+
+FINAL TRUTH:
+Replit completion does not equal full product completion.
+Replit can finish UI, routing, fallback, simulation, API shell, and TypeScript.
+Real BLE/offline/Pixel Calling proof must happen later on physical devices.
+```

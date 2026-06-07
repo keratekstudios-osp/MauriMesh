@@ -1,0 +1,13 @@
+uploads = []
+
+[[generated]]
+id = "0eoEEaf0nZwwzAr8Y5RIH"
+uri = "file://artifacts/messenger-mobile/assets/images/icon.png"
+type = "image"
+title = "maurimesh app icon"
+
+[[outputs]]
+id = "NpsVVmzvxZhBmFrC0U4dB"
+uri = "file://maurimesh-source.zip"
+type = "unspecified"
+title = "MauriMesh — Full Source Code (2.8 MB, 754 files)"

@@ -1,0 +1,136 @@
+import { type Request, type Response, type NextFunction } from "express";
+import { db } from "@workspace/db";
+import { meshSessions } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
+
+// ── Session type augmentation ─────────────────────────────────────────────────
+
+declare global {
+  namespace Express {
+    interface Request {
+      meshSession?: { token: string; nodeId: string; username: string; role: string; expiresAt: Date };
+    }
+  }
+}
+
+// ── Token cache (short-lived, prevents per-request DB round-trip) ─────────────
+
+interface CachedSession {
+  nodeId: string;
+  username: string;
+  role: string;
+  expiresAt: Date;
+  cachedAt: number;
+}
+
+const TOKEN_CACHE = new Map<string, CachedSession>();
+const CACHE_TTL_MS = 30_000; // 30 seconds — short enough to pick up revocations quickly
+
+function getCached(token: string): CachedSession | null {
+  const entry = TOKEN_CACHE.get(token);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
+    TOKEN_CACHE.delete(token);
+    return null;
+  }
+  return entry;
+}
+
+function putCache(token: string, session: CachedSession): void {
+  // Evict old entries to avoid unbounded growth
+  if (TOKEN_CACHE.size > 10_000) {
+    const now = Date.now();
+    for (const [k, v] of TOKEN_CACHE) {
+      if (now - v.cachedAt > CACHE_TTL_MS) TOKEN_CACHE.delete(k);
+    }
+  }
+  TOKEN_CACHE.set(token, session);
+}
+
+/**
+ * Immediately remove a token from the in-memory cache.
+ * Call this when a session is revoked (logout) so the cache never serves
+ * a token that has already been deleted from the database.
+ */
+export function evictTokenFromCache(token: string): void {
+  TOKEN_CACHE.delete(token);
+}
+
+// ── Shared token validator (used by SSE routes that can't receive Bearer headers) ──
+
+export interface ValidatedSession {
+  token:     string;
+  nodeId:    string;
+  username:  string;
+  role:      string;
+  expiresAt: Date;
+}
+
+export async function validateToken(token: string): Promise<ValidatedSession | null> {
+  if (!token) return null;
+
+  const cached = getCached(token);
+  if (cached) {
+    if (cached.expiresAt < new Date()) {
+      TOKEN_CACHE.delete(token);
+      return null;
+    }
+    return { token, ...cached };
+  }
+
+  try {
+    const rows = await db
+      .select()
+      .from(meshSessions)
+      .where(eq(meshSessions.token, token))
+      .limit(1);
+
+    const session = rows[0];
+    if (!session || session.expiresAt < new Date()) return null;
+
+    const entry: CachedSession = {
+      nodeId:    session.nodeId,
+      username:  session.username,
+      role:      session.role,
+      expiresAt: session.expiresAt,
+      cachedAt:  Date.now(),
+    };
+    putCache(token, entry);
+    return { token, ...entry };
+  } catch {
+    return null;
+  }
+}
+
+// ── Middleware ────────────────────────────────────────────────────────────────
+
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const authHeader = req.headers.authorization ?? "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+
+  
+// MAURIMESH_PUBLIC_MESH_AUTH_BYPASS
+if (
+  req &&
+  (
+    (req.path && req.path.startsWith("/api/mesh-public/")) ||
+    (req.url && req.url.startsWith("/api/mesh-public/"))
+  )
+) {
+  return next();
+}
+
+if (!token) {
+    res.status(401).json({ ok: false, error: "Authentication required. Provide Authorization: Bearer <token>." });
+    return;
+  }
+
+  const session = await validateToken(token);
+  if (!session) {
+    res.status(401).json({ ok: false, error: "Invalid or expired token." });
+    return;
+  }
+
+  req.meshSession = session;
+  next();
+}

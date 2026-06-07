@@ -1,0 +1,319 @@
+You wire the QA dashboard to real Jest/Vitest CI by replacing the current mock JSON values with actual test result output generated during test runs.
+
+Right now your dashboard is likely using hardcoded scaffold data like:
+
+```ts
+const qaData = {
+  total: 154,
+  pass: 148,
+  fail: 3,
+}
+```
+
+You want:
+
+* Vitest/Jest runs
+* generates JSON report
+* dashboard reads JSON
+* dashboard updates automatically
+
+That creates real engineering telemetry.
+
+---
+
+# Recommended Stack
+
+For MauriMesh:
+
+## Use Vitest
+
+Better for:
+
+* TypeScript
+* Vite/Replit
+* modern ESM
+* React Native-compatible TS testing
+
+Use Jest only if already deeply integrated.
+
+---
+
+# Target Architecture
+
+```txt
+Vitest/Jest
+    ↓
+JSON report output
+    ↓
+server/api/qa
+    ↓
+QA dashboard UI
+```
+
+---
+
+# Step 1 — Install Vitest
+
+In Replit shell:
+
+```bash
+pnpm add -D vitest @vitest/ui
+```
+
+or npm:
+
+```bash
+npm install -D vitest @vitest/ui
+```
+
+---
+
+# Step 2 — Add Vitest Config
+
+Create:
+
+```txt
+vitest.config.ts
+```
+
+```ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: "node",
+    reporters: ["default", "json"],
+    outputFile: {
+      json: "./qa-results/results.json",
+    },
+    coverage: {
+      reporter: ["text", "json-summary"],
+    },
+  },
+});
+```
+
+---
+
+# Step 3 — Add Scripts
+
+In `package.json`
+
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  }
+}
+```
+
+---
+
+# Step 4 — Run Tests
+
+Run:
+
+```bash
+pnpm test
+```
+
+or:
+
+```bash
+npm run test
+```
+
+This generates:
+
+```txt
+qa-results/results.json
+```
+
+---
+
+# Step 5 — Create QA API Endpoint
+
+Example:
+
+```txt
+server/routes/qa.ts
+```
+
+```ts
+import fs from "fs";
+import path from "path";
+
+export async function getQaResults() {
+  const file = path.join(process.cwd(), "qa-results/results.json");
+
+  if (!fs.existsSync(file)) {
+    return {
+      ok: false,
+      message: "No QA results generated yet.",
+    };
+  }
+
+  const raw = fs.readFileSync(file, "utf-8");
+  const data = JSON.parse(raw);
+
+  return {
+    ok: true,
+    data,
+  };
+}
+```
+
+---
+
+# Step 6 — Expose API Route
+
+Example Express/Fastify:
+
+```ts
+app.get("/api/qa", async (_req, res) => {
+  const result = await getQaResults();
+  res.json(result);
+});
+```
+
+---
+
+# Step 7 — Wire Dashboard Frontend
+
+Instead of mock data:
+
+```ts
+const mock = {...}
+```
+
+Use:
+
+```ts
+const res = await fetch("/api/qa");
+const qa = await res.json();
+```
+
+---
+
+# Step 8 — Parse Vitest Output
+
+Vitest JSON structure differs slightly.
+
+You want:
+
+```ts
+const total = data.numTotalTests;
+const passed = data.numPassedTests;
+const failed = data.numFailedTests;
+```
+
+Then build cards dynamically.
+
+---
+
+# Step 9 — Map to MauriMesh Categories
+
+You can group tests by:
+
+* filename
+* tags
+* folders
+
+Example structure:
+
+```txt
+tests/
+  ble/
+  routing/
+  ack/
+  encryption/
+  ui/
+```
+
+Then aggregate counts per folder.
+
+---
+
+# Example Category Mapping
+
+```ts
+{
+  ble: {
+    pass: 24,
+    fail: 0
+  },
+  routing: {
+    pass: 36,
+    fail: 2
+  }
+}
+```
+
+---
+
+# Step 10 — Auto Run in CI
+
+If using GitHub Actions:
+
+```yaml
+- run: pnpm test
+```
+
+Then:
+
+* upload artifact
+* deploy report
+* update dashboard
+
+---
+
+# Important Engineering Rule
+
+Do NOT:
+
+* fake pass counts
+* hardcode percentages
+* manually edit metrics
+
+Dashboard must reflect:
+
+```txt
+actual test truth
+```
+
+That aligns with your:
+
+* no fake telemetry
+* production truth rules
+* verify before change
+
+---
+
+# Best Upgrade After This
+
+After JSON works:
+
+## Add:
+
+* historical runs
+* trend graphs
+* flaky test detection
+* routing latency telemetry
+* ACK retry heatmaps
+* relay failure analysis
+* packet fragmentation metrics
+
+That evolves MauriMesh from:
+
+```txt
+app UI
+```
+
+toward:
+
+```txt
+mesh engineering platform
+```

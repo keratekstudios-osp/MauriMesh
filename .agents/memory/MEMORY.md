@@ -1,0 +1,8 @@
+- [TSX generic Babel fix](tsx-generic-babel-fix.md) — never use <Component<T>> in TSX; drop the type arg, let TS infer from props. Trailing comma workaround triggers TS1009.
+- [MauriMesh API auth gap](maurimesh-api-auth.md) — mobile apiGet/apiPost sends no Authorization header; protected routes return 401 in non-dev contexts.
+- [MauriMesh operator role](maurimesh-operator-role.md) — mesh_sessions now has a role column ("user"|"operator"); operator sessions require MESH_OPERATOR_KEY at login; requireOperator middleware guards admin routes.
+- [expo-secure-store SDK compat](expo-secure-store-sdk.md) — SDK 54 requires ~14.2.4; 56.x is for SDK 56 and causes Metro HTTP 500.
+- [MauriMesh screen wiring pattern](maurimesh-screen-wiring.md) — apiGet/apiPost returns ApiResult<T>; check res.ok, data at res.data.*; error at res.error.
+- [MauriMesh DB schema complete](maurimesh-db-schema.md) — trustRecords, storeForwardQueue, proofLedger, runtimeErrors all exist in lib/db/src/schema/mesh.ts.
+- [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
+- [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.

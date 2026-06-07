@@ -1,0 +1,98 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Environment secrets — never commit real .env files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# Android build secrets
+*.keystore
+*.jks
+*.p12
+*.pem
+google-services.json
+GoogleService-Info.plist
+
+# Replit
+.cache/
+.local/
+artifacts/api-server/qa-results/vitest-results.json
+
+# MauriMesh generated reports
+MAURIMESH_*_ERRORS.txt
+MAURIMESH_*_FINAL.txt
+MAURIMESH_*_CHECK.txt
+MAURIMESH_*_REPAIR.txt
+MAURIMESH_*_DEDUPE.txt
+MAURIMESH_SHELL_REPORT.md
+
+# Expo web export outputs
+dist-test/
+dist-test-2/
+dist-test-final/
+dist-test-final-dedupe/
+dist-test-direct-repair/
+
+# Local backups
+backups/
+*.backup.*
+
+# MauriMesh runtime local persistence
+data/maurimesh/*.json
+!data/maurimesh/.gitkeep
+
+# Secrets / signing
+*.jks
+*.keystore
+*.p12
+*.pem
+*service-account*.json
+
+# Android signing
+android/gradle.properties

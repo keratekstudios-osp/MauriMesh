@@ -1,0 +1,516 @@
+{
+  "generatedAt": "2026-06-02T15:26:28.698Z",
+  "overallPercent": 100,
+  "integrations": [
+    {
+      "name": "BLE Discovery & Advertising",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Messaging / Chat",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Encryption / Crypto Identity",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Proof Ledger",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Store-and-Forward Queue",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Peer Discovery & Mapping",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "ACK Tracking",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Calling / VoIP",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Runtime Truth & Diagnostics",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Push Notifications",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Rust Core Engine",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Hybrid Signal Hop",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "Two-Phone Proof Mode",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "OTA Updates",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "AI Mesh Routing",
+      "score": 100,
+      "criteria": [
+        {
+          "label": "UI path wired",
+          "passed": true
+        },
+        {
+          "label": "Runtime path wired",
+          "passed": true
+        },
+        {
+          "label": "Device/native path wired",
+          "passed": true
+        },
+        {
+          "label": "Offline save path wired",
+          "passed": true
+        },
+        {
+          "label": "Proof ledger path wired",
+          "passed": true
+        },
+        {
+          "label": "Tests exist",
+          "passed": true
+        },
+        {
+          "label": "Physical device proof",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

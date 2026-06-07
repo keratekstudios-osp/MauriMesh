@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "MauriMesh",
+    "slug": "MauriMesh",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.workspace"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.workspace"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ced770ee-bb3c-4b5a-8faa-3f11f11ca8b5"
+      }
+    },
+    "owner": "mauri-mesh-network"
+  },
+  "owner": "mauri-mesh-network",
+  "extra": {
+    "eas": {}
+  }
+}
