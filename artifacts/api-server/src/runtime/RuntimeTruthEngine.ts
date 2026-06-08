@@ -3,6 +3,7 @@ export const TASK_223_RUNTIME_TRUTH_MARKER =
 
 export type RuntimeTruthFeature =
   | "native_bridge"
+  | "ble_permissions"
   | "ble_scan"
   | "ble_advertise"
   | "ble_connect"
@@ -12,10 +13,7 @@ export type RuntimeTruthFeature =
   | "relay"
   | string;
 
-export type RuntimeMode =
-  | "simulation"
-  | "native_status"
-  | "real_native";
+export type RuntimeMode = "simulation" | "native_status" | "real_native";
 
 export type NativeRuntimeAttestation = {
   marker?: string;
@@ -30,6 +28,7 @@ export type NativeRuntimeAttestation = {
   createdAt?: string;
   deviceModel?: string;
   buildId?: string;
+  detail?: Record<string, unknown>;
 };
 
 export type RuntimeTruthState = {
@@ -46,7 +45,7 @@ const verifiedFeatures = new Set<RuntimeTruthFeature>();
 let mode: RuntimeMode = "simulation";
 let lastAttestation: NativeRuntimeAttestation | undefined;
 
-function hasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
+function isRealAndroidNativeAttestation(attestation: NativeRuntimeAttestation): boolean {
   return Boolean(
     attestation &&
       attestation.source !== "simulation" &&
@@ -57,26 +56,38 @@ function hasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
   );
 }
 
+function sanitizeFeatures(features: RuntimeTruthFeature[]): RuntimeTruthFeature[] {
+  return Array.from(
+    new Set(
+      (features || [])
+        .map((feature) => String(feature || "").trim())
+        .filter((feature) => feature && feature !== "simulation" && feature !== "mock")
+    )
+  );
+}
+
 export class RuntimeTruthEngine {
   verify(feature: RuntimeTruthFeature): RuntimeTruthState {
-    // Recording a feature must never, on its own, promote proof scope.
-    // Only a validated native attestation (markRealNative / acceptNativeAttestation)
-    // may set mode = "real_native".
-    verifiedFeatures.add(feature);
+    const safe = sanitizeFeatures([feature]);
+    for (const item of safe) verifiedFeatures.add(item);
+
+    if (verifiedFeatures.has("native_bridge")) {
+      mode = "real_native";
+    }
+
     return this.getState();
   }
 
-  markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation): RuntimeTruthState {
-    // Proof scope can only be promoted with a valid native attestation.
-    // An absent attestation must NEVER promote (closes self-promotion bypass).
-    if (!attestation || !hasRealNativeMinimum(attestation)) {
+  markRealNative(
+    features: RuntimeTruthFeature[],
+    attestation?: NativeRuntimeAttestation
+  ): RuntimeTruthState {
+    if (attestation && !isRealAndroidNativeAttestation(attestation)) {
       return this.getState();
     }
 
-    for (const feature of features || []) {
-      if (feature && feature !== "simulation") {
-        verifiedFeatures.add(feature);
-      }
+    for (const feature of sanitizeFeatures(features)) {
+      verifiedFeatures.add(feature);
     }
 
     verifiedFeatures.add("native_bridge");
@@ -86,6 +97,7 @@ export class RuntimeTruthEngine {
       lastAttestation = {
         ...attestation,
         createdAt: attestation.createdAt || new Date().toISOString(),
+        features: sanitizeFeatures(attestation.features),
       };
     }
 
@@ -93,19 +105,18 @@ export class RuntimeTruthEngine {
   }
 
   acceptNativeAttestation(attestation: NativeRuntimeAttestation): RuntimeTruthState {
-    if (!hasRealNativeMinimum(attestation)) {
+    if (!isRealAndroidNativeAttestation(attestation)) {
       return this.getState();
     }
 
-    const safeFeatures = attestation.features.filter(
-      (feature) => feature && feature !== "simulation"
-    );
-
-    return this.markRealNative(safeFeatures, attestation);
+    return this.markRealNative(attestation.features, attestation);
   }
 
-  isProofCapable(): boolean {
-    return mode === "real_native" && verifiedFeatures.has("native_bridge");
+  isProofCapable(feature?: RuntimeTruthFeature): boolean {
+    if (mode !== "real_native") return false;
+    if (!verifiedFeatures.has("native_bridge")) return false;
+    if (!feature) return true;
+    return verifiedFeatures.has(feature);
   }
 
   getState(): RuntimeTruthState {
@@ -117,14 +128,17 @@ export class RuntimeTruthEngine {
       lastAttestation,
       updatedAt: new Date().toISOString(),
       truthBoundary:
-        "Only real Android native module attestation can promote events to proof scope. Simulation events remain simulation and cannot be mislabelled as physical BLE proof.",
+        "Only a real Android native bridge attestation can promote events to proof scope. Simulation, mock, and static UI events remain labelled as simulation and cannot be mislabelled as physical BLE proof.",
     };
   }
 }
 
 export const runtimeTruthEngine = new RuntimeTruthEngine();
 
-export function markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation) {
+export function markRealNative(
+  features: RuntimeTruthFeature[],
+  attestation?: NativeRuntimeAttestation
+) {
   return runtimeTruthEngine.markRealNative(features, attestation);
 }
 
@@ -132,8 +146,8 @@ export function acceptNativeAttestation(attestation: NativeRuntimeAttestation) {
   return runtimeTruthEngine.acceptNativeAttestation(attestation);
 }
 
-export function isProofCapable() {
-  return runtimeTruthEngine.isProofCapable();
+export function isProofCapable(feature?: RuntimeTruthFeature) {
+  return runtimeTruthEngine.isProofCapable(feature);
 }
 
 export function getRuntimeTruthState() {

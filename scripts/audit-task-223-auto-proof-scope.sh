@@ -6,7 +6,7 @@ echo "#223 Auto Proof Scope Audit"
 echo "============================================================"
 
 echo ""
-echo "1. RuntimeTruthEngine methods"
+echo "1. RuntimeTruthEngine"
 grep -RniE "markRealNative|acceptNativeAttestation|isProofCapable|getRuntimeTruthState|TASK_223_RUNTIME_TRUTH" \
   artifacts/api-server/src/runtime 2>/dev/null || true
 
@@ -16,7 +16,7 @@ grep -RniE "registerRuntimeVerifyRoute|/api/runtime/verify|/api/runtime/truth|TA
   artifacts/api-server/src/routes 2>/dev/null || true
 
 echo ""
-echo "3. Activity proof-scope guard"
+echo "3. Activity proof-scope protection"
 grep -RniE "task223NormalizeActivityTruth|proofScopeBlocked|proofScopeAccepted|simulation_labelled|physical_proof" \
   artifacts/api-server/src/routes/activity.ts 2>/dev/null || true
 
@@ -26,8 +26,8 @@ grep -RniE "sendNativeRuntimeAttestation|NativeBridgeProvider|TASK_223_NATIVE_AT
   artifacts/messenger-mobile src 2>/dev/null || true
 
 echo ""
-echo "5. Simulation protection search"
-grep -RniE "truthLevel.*physical|physical_proof|simulation_labelled|proofScope" \
+echo "5. Remaining risky proof labels"
+grep -RniE "truthLevel.*physical|physical_proof|real_native|proofScope" \
   artifacts/api-server/src artifacts/messenger-mobile src 2>/dev/null | head -250 || true
 
 echo ""

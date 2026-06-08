@@ -3,20 +3,15 @@ import { NativeModules, Platform } from "react-native";
 export const TASK_223_NATIVE_ATTESTATION_CLIENT_MARKER =
   "TASK_223_NATIVE_ATTESTATION_CLIENT_20260608_A";
 
-type AttestationResult = {
-  ok: boolean;
-  accepted?: boolean;
-  proofCapable?: boolean;
-  error?: string;
-};
-
 type NativeBleStatus = {
+  module?: string;
+  mode?: string;
   modulePresent?: boolean;
   blePermissions?: boolean;
   scanActive?: boolean;
   discoveredCount?: number;
-  mode?: string;
-  module?: string;
+  liveBleActive?: boolean;
+  lastError?: string;
 };
 
 type NativeBleModule = {
@@ -24,8 +19,16 @@ type NativeBleModule = {
   getScanProofStatus?: () => Promise<NativeBleStatus>;
 };
 
+export type NativeAttestationResult = {
+  ok: boolean;
+  accepted?: boolean;
+  proofCapable?: boolean;
+  error?: string;
+};
+
 function getApiBase(): string {
   const globalAny = globalThis as any;
+
   return (
     globalAny.__MAURIMESH_API_BASE__ ||
     globalAny.EXPO_PUBLIC_API_URL ||
@@ -39,11 +42,12 @@ async function readNativeBleStatus(): Promise<NativeBleStatus> {
 
   if (!native) {
     return {
+      module: "MauriMeshBle",
+      mode: "native_module_missing",
       modulePresent: false,
       blePermissions: false,
       scanActive: false,
       discoveredCount: 0,
-      mode: "native_module_missing",
     };
   }
 
@@ -56,15 +60,16 @@ async function readNativeBleStatus(): Promise<NativeBleStatus> {
   }
 
   return {
+    module: "MauriMeshBle",
+    mode: "module_present_status_unavailable",
     modulePresent: true,
     blePermissions: false,
     scanActive: false,
     discoveredCount: 0,
-    mode: "native_module_present_status_unavailable",
   };
 }
 
-export async function sendNativeRuntimeAttestation(): Promise<AttestationResult> {
+export async function sendNativeRuntimeAttestation(): Promise<NativeAttestationResult> {
   if (Platform.OS !== "android") {
     return {
       ok: false,
@@ -84,12 +89,11 @@ export async function sendNativeRuntimeAttestation(): Promise<AttestationResult>
 
   const status = await readNativeBleStatus();
 
-  const features = ["native_bridge"];
-
-  if (status.modulePresent) features.push("native_bridge");
-  if (status.blePermissions) features.push("ble_permissions");
+  const features = new Set<string>();
+  if (status.modulePresent) features.add("native_bridge");
+  if (status.blePermissions) features.add("ble_permissions");
   if (status.scanActive || Number(status.discoveredCount || 0) > 0) {
-    features.push("ble_scan");
+    features.add("ble_scan");
   }
 
   const payload = {
@@ -101,11 +105,13 @@ export async function sendNativeRuntimeAttestation(): Promise<AttestationResult>
     permissionsGranted: Boolean(status.blePermissions),
     scanActive: Boolean(status.scanActive),
     discoveredCount: Number(status.discoveredCount || 0),
-    features: Array.from(new Set(features)),
+    features: Array.from(features),
     createdAt: new Date().toISOString(),
     detail: {
-      mode: status.mode,
       module: status.module,
+      mode: status.mode,
+      liveBleActive: status.liveBleActive,
+      lastError: status.lastError,
     },
   };
 

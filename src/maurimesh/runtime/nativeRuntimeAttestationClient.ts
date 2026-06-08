@@ -6,6 +6,7 @@ export const TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER =
 export async function readRootNativeProofFeatures() {
   if (Platform.OS !== "android") {
     return {
+      marker: TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER,
       nativeModulePresent: false,
       features: [],
       reason: "android_only",
@@ -21,6 +22,7 @@ export async function readRootNativeProofFeatures() {
 
   if (!native) {
     return {
+      marker: TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER,
       nativeModulePresent: false,
       features: [],
       reason: "MauriMeshBle missing",
@@ -34,11 +36,12 @@ export async function readRootNativeProofFeatures() {
       ? await native.getStatus()
       : { modulePresent: true };
 
-  const features = ["native_bridge"];
+  const features = new Set<string>();
 
-  if (status.blePermissions) features.push("ble_permissions");
+  if (status.modulePresent ?? true) features.add("native_bridge");
+  if (status.blePermissions) features.add("ble_permissions");
   if (status.scanActive || Number(status.discoveredCount || 0) > 0) {
-    features.push("ble_scan");
+    features.add("ble_scan");
   }
 
   return {
@@ -47,7 +50,7 @@ export async function readRootNativeProofFeatures() {
     permissionsGranted: Boolean(status.blePermissions),
     scanActive: Boolean(status.scanActive),
     discoveredCount: Number(status.discoveredCount || 0),
-    features,
+    features: Array.from(features),
     status,
   };
 }

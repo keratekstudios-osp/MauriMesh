@@ -4,8 +4,8 @@ set -euo pipefail
 echo ""
 echo "============================================================"
 echo "#223 — AUTO PROMOTE REAL BLE EVENTS TO PROOF SCOPE"
-echo "Adds native attestation + RuntimeTruthEngine.markRealNative(features)"
-echo "NO deletion. NO fake proof. Simulation cannot be promoted."
+echo "RuntimeTruthEngine + native attestation + simulation protection"
+echo "NO deletion. NO fake proof. NO physical proof without native attestation."
 echo "============================================================"
 echo ""
 
@@ -17,7 +17,7 @@ API_RUNTIME="$ROOT/artifacts/api-server/src/runtime"
 API_ROUTES="$ROOT/artifacts/api-server/src/routes"
 MOBILE_CONTEXTS="$ROOT/artifacts/messenger-mobile/contexts"
 MOBILE_LIB="$ROOT/artifacts/messenger-mobile/src/lib"
-ROOT_SRC="$ROOT/src/maurimesh/runtime"
+ROOT_RUNTIME="$ROOT/src/maurimesh/runtime"
 DOCS="$ROOT/docs"
 SCRIPTS="$ROOT/scripts"
 
@@ -25,28 +25,26 @@ TRUTH="$API_RUNTIME/RuntimeTruthEngine.ts"
 ACTIVITY="$API_ROUTES/activity.ts"
 CONNECTIVITY="$MOBILE_CONTEXTS/ConnectivityContext.tsx"
 
-mkdir -p "$BACKUP" "$API_RUNTIME" "$API_ROUTES" "$MOBILE_CONTEXTS" "$MOBILE_LIB" "$ROOT_SRC" "$DOCS" "$SCRIPTS"
+mkdir -p "$BACKUP" "$API_RUNTIME" "$API_ROUTES" "$MOBILE_CONTEXTS" "$MOBILE_LIB" "$ROOT_RUNTIME" "$DOCS" "$SCRIPTS"
 
 echo ""
 echo "1. Backup targets"
-
 cp "$TRUTH" "$BACKUP/RuntimeTruthEngine.ts" 2>/dev/null || true
 cp "$ACTIVITY" "$BACKUP/activity.ts" 2>/dev/null || true
 cp "$CONNECTIVITY" "$BACKUP/ConnectivityContext.tsx" 2>/dev/null || true
 cp package.json "$BACKUP/package.json" 2>/dev/null || true
-
 echo "Backup: $BACKUP"
 
 echo ""
-echo "2. Install RuntimeTruthEngine if missing, or patch if present"
+echo "2. Install RuntimeTruthEngine auto-native layer"
 
-if [ ! -f "$TRUTH" ]; then
 cat > "$TRUTH" <<'TS'
 export const TASK_223_RUNTIME_TRUTH_MARKER =
   "TASK_223_RUNTIME_TRUTH_ENGINE_AUTO_NATIVE_20260608_A";
 
 export type RuntimeTruthFeature =
   | "native_bridge"
+  | "ble_permissions"
   | "ble_scan"
   | "ble_advertise"
   | "ble_connect"
@@ -56,10 +54,7 @@ export type RuntimeTruthFeature =
   | "relay"
   | string;
 
-export type RuntimeMode =
-  | "simulation"
-  | "native_status"
-  | "real_native";
+export type RuntimeMode = "simulation" | "native_status" | "real_native";
 
 export type NativeRuntimeAttestation = {
   marker?: string;
@@ -74,6 +69,7 @@ export type NativeRuntimeAttestation = {
   createdAt?: string;
   deviceModel?: string;
   buildId?: string;
+  detail?: Record<string, unknown>;
 };
 
 export type RuntimeTruthState = {
@@ -90,7 +86,7 @@ const verifiedFeatures = new Set<RuntimeTruthFeature>();
 let mode: RuntimeMode = "simulation";
 let lastAttestation: NativeRuntimeAttestation | undefined;
 
-function hasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
+function isRealAndroidNativeAttestation(attestation: NativeRuntimeAttestation): boolean {
   return Boolean(
     attestation &&
       attestation.source !== "simulation" &&
@@ -101,24 +97,38 @@ function hasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
   );
 }
 
+function sanitizeFeatures(features: RuntimeTruthFeature[]): RuntimeTruthFeature[] {
+  return Array.from(
+    new Set(
+      (features || [])
+        .map((feature) => String(feature || "").trim())
+        .filter((feature) => feature && feature !== "simulation" && feature !== "mock")
+    )
+  );
+}
+
 export class RuntimeTruthEngine {
   verify(feature: RuntimeTruthFeature): RuntimeTruthState {
-    verifiedFeatures.add(feature);
+    const safe = sanitizeFeatures([feature]);
+    for (const item of safe) verifiedFeatures.add(item);
+
     if (verifiedFeatures.has("native_bridge")) {
       mode = "real_native";
     }
+
     return this.getState();
   }
 
-  markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation): RuntimeTruthState {
-    if (attestation && !hasRealNativeMinimum(attestation)) {
+  markRealNative(
+    features: RuntimeTruthFeature[],
+    attestation?: NativeRuntimeAttestation
+  ): RuntimeTruthState {
+    if (attestation && !isRealAndroidNativeAttestation(attestation)) {
       return this.getState();
     }
 
-    for (const feature of features || []) {
-      if (feature && feature !== "simulation") {
-        verifiedFeatures.add(feature);
-      }
+    for (const feature of sanitizeFeatures(features)) {
+      verifiedFeatures.add(feature);
     }
 
     verifiedFeatures.add("native_bridge");
@@ -128,6 +138,7 @@ export class RuntimeTruthEngine {
       lastAttestation = {
         ...attestation,
         createdAt: attestation.createdAt || new Date().toISOString(),
+        features: sanitizeFeatures(attestation.features),
       };
     }
 
@@ -135,19 +146,18 @@ export class RuntimeTruthEngine {
   }
 
   acceptNativeAttestation(attestation: NativeRuntimeAttestation): RuntimeTruthState {
-    if (!hasRealNativeMinimum(attestation)) {
+    if (!isRealAndroidNativeAttestation(attestation)) {
       return this.getState();
     }
 
-    const safeFeatures = attestation.features.filter(
-      (feature) => feature && feature !== "simulation"
-    );
-
-    return this.markRealNative(safeFeatures, attestation);
+    return this.markRealNative(attestation.features, attestation);
   }
 
-  isProofCapable(): boolean {
-    return mode === "real_native" && verifiedFeatures.has("native_bridge");
+  isProofCapable(feature?: RuntimeTruthFeature): boolean {
+    if (mode !== "real_native") return false;
+    if (!verifiedFeatures.has("native_bridge")) return false;
+    if (!feature) return true;
+    return verifiedFeatures.has(feature);
   }
 
   getState(): RuntimeTruthState {
@@ -159,174 +169,41 @@ export class RuntimeTruthEngine {
       lastAttestation,
       updatedAt: new Date().toISOString(),
       truthBoundary:
-        "Only real Android native module attestation can promote events to proof scope. Simulation events remain simulation and cannot be mislabelled as physical BLE proof.",
+        "Only a real Android native bridge attestation can promote events to proof scope. Simulation, mock, and static UI events remain labelled as simulation and cannot be mislabelled as physical BLE proof.",
     };
   }
 }
 
 export const runtimeTruthEngine = new RuntimeTruthEngine();
 
-export function markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation) {
+export function markRealNative(
+  features: RuntimeTruthFeature[],
+  attestation?: NativeRuntimeAttestation
+) {
   return runtimeTruthEngine.markRealNative(features, attestation);
 }
 
-export function isProofCapable() {
-  return runtimeTruthEngine.isProofCapable();
+export function acceptNativeAttestation(attestation: NativeRuntimeAttestation) {
+  return runtimeTruthEngine.acceptNativeAttestation(attestation);
+}
+
+export function isProofCapable(feature?: RuntimeTruthFeature) {
+  return runtimeTruthEngine.isProofCapable(feature);
 }
 
 export function getRuntimeTruthState() {
   return runtimeTruthEngine.getState();
 }
 TS
-else
-python3 <<'PY'
-from pathlib import Path
-import re
-
-path = Path("artifacts/api-server/src/runtime/RuntimeTruthEngine.ts")
-text = path.read_text()
-original = text
-
-if "TASK_223_RUNTIME_TRUTH_ENGINE_AUTO_NATIVE_20260608_A" not in text:
-    text += '''
-
-export const TASK_223_RUNTIME_TRUTH_MARKER =
-  "TASK_223_RUNTIME_TRUTH_ENGINE_AUTO_NATIVE_20260608_A";
-
-export type RuntimeTruthFeature =
-  | "native_bridge"
-  | "ble_scan"
-  | "ble_advertise"
-  | "ble_connect"
-  | "ble_tx"
-  | "ble_rx"
-  | "ack"
-  | "relay"
-  | string;
-
-export type NativeRuntimeAttestation = {
-  marker?: string;
-  source: string;
-  platform: string;
-  appPackage?: string;
-  nativeModulePresent: boolean;
-  permissionsGranted?: boolean;
-  scanActive?: boolean;
-  discoveredCount?: number;
-  features: RuntimeTruthFeature[];
-  createdAt?: string;
-  deviceModel?: string;
-  buildId?: string;
-};
-
-const task223VerifiedFeatures = new Set<RuntimeTruthFeature>();
-let task223ProofCapable = false;
-let task223LastAttestation: NativeRuntimeAttestation | undefined;
-
-function task223HasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
-  return Boolean(
-    attestation &&
-      attestation.source !== "simulation" &&
-      attestation.platform === "android" &&
-      attestation.nativeModulePresent === true &&
-      Array.isArray(attestation.features) &&
-      attestation.features.includes("native_bridge")
-  );
-}
-
-export function markRealNative(
-  features: RuntimeTruthFeature[],
-  attestation?: NativeRuntimeAttestation
-) {
-  if (attestation && !task223HasRealNativeMinimum(attestation)) {
-    return getRuntimeTruthState();
-  }
-
-  for (const feature of features || []) {
-    if (feature && feature !== "simulation") {
-      task223VerifiedFeatures.add(feature);
-    }
-  }
-
-  task223VerifiedFeatures.add("native_bridge");
-  task223ProofCapable = true;
-
-  if (attestation) {
-    task223LastAttestation = {
-      ...attestation,
-      createdAt: attestation.createdAt || new Date().toISOString(),
-    };
-  }
-
-  return getRuntimeTruthState();
-}
-
-export function acceptNativeAttestation(attestation: NativeRuntimeAttestation) {
-  if (!task223HasRealNativeMinimum(attestation)) {
-    return getRuntimeTruthState();
-  }
-
-  return markRealNative(
-    attestation.features.filter((feature) => feature && feature !== "simulation"),
-    attestation
-  );
-}
-
-export function isProofCapable(): boolean {
-  return task223ProofCapable === true && task223VerifiedFeatures.has("native_bridge");
-}
-
-export function getRuntimeTruthState() {
-  return {
-    marker: TASK_223_RUNTIME_TRUTH_MARKER,
-    mode: isProofCapable() ? "real_native" : "simulation",
-    proofCapable: isProofCapable(),
-    verifiedFeatures: Array.from(task223VerifiedFeatures),
-    lastAttestation: task223LastAttestation,
-    updatedAt: new Date().toISOString(),
-    truthBoundary:
-      "Only real Android native module attestation can promote events to proof scope. Simulation events remain simulation and cannot be mislabelled as physical BLE proof.",
-  };
-}
-'''
-
-# If class RuntimeTruthEngine exists but lacks markRealNative, inject methods before final class brace approximately.
-if "class RuntimeTruthEngine" in text and "markRealNative(features" not in text:
-    marker_method = '''
-  markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation) {
-    return markRealNative(features, attestation);
-  }
-
-  acceptNativeAttestation(attestation: NativeRuntimeAttestation) {
-    return acceptNativeAttestation(attestation);
-  }
-
-  isProofCapable() {
-    return isProofCapable();
-  }
-'''
-    idx = text.find("class RuntimeTruthEngine")
-    brace = text.find("{", idx)
-    end = text.find("\n}", brace)
-    if end != -1:
-      text = text[:end] + "\n" + marker_method + text[end:]
-
-if text != original:
-    path.write_text(text)
-    print("RuntimeTruthEngine patched for #223")
-else:
-    print("RuntimeTruthEngine already has #223 patch")
-PY
-fi
 
 echo ""
-echo "3. Create /api/runtime/verify route"
+echo "3. Install POST /api/runtime/verify route contract"
 
 cat > "$API_ROUTES/runtime-verify.ts" <<'TS'
 import {
   acceptNativeAttestation,
   getRuntimeTruthState,
-  markRealNative,
+  isProofCapable,
 } from "../runtime/RuntimeTruthEngine";
 
 export const TASK_223_RUNTIME_VERIFY_ROUTE_MARKER =
@@ -334,10 +211,13 @@ export const TASK_223_RUNTIME_VERIFY_ROUTE_MARKER =
 
 export function registerRuntimeVerifyRoute(app: any) {
   app.get("/api/runtime/truth", async (_req: any, res: any) => {
+    const truth = getRuntimeTruthState();
+
     res.json({
       ok: true,
       marker: TASK_223_RUNTIME_VERIFY_ROUTE_MARKER,
-      truth: getRuntimeTruthState(),
+      proofCapable: isProofCapable(),
+      truth,
     });
   });
 
@@ -360,6 +240,10 @@ export function registerRuntimeVerifyRoute(app: any) {
         createdAt: String(body.createdAt || new Date().toISOString()),
         deviceModel: body.deviceModel ? String(body.deviceModel) : undefined,
         buildId: body.buildId ? String(body.buildId) : undefined,
+        detail:
+          body.detail && typeof body.detail === "object"
+            ? body.detail
+            : {},
       };
 
       const accepted =
@@ -379,7 +263,7 @@ export function registerRuntimeVerifyRoute(app: any) {
         proofCapable: truth.proofCapable,
         truth,
         truthBoundary:
-          "Attestation is accepted only from a real Android native bridge. Simulation cannot promote proof scope.",
+          "Native attestation is accepted only from a real Android native bridge. Simulation cannot promote proof scope.",
       });
     } catch (error) {
       res.status(500).json({
@@ -389,27 +273,11 @@ export function registerRuntimeVerifyRoute(app: any) {
       });
     }
   });
-
-  app.post("/api/runtime/mark-real-native", async (req: any, res: any) => {
-    const body = req.body || {};
-    const features = Array.isArray(body.features)
-      ? body.features.map((feature: unknown) => String(feature))
-      : ["native_bridge"];
-
-    const truth = markRealNative(features, body.attestation);
-
-    res.json({
-      ok: true,
-      marker: TASK_223_RUNTIME_VERIFY_ROUTE_MARKER,
-      proofCapable: truth.proofCapable,
-      truth,
-    });
-  });
 }
 TS
 
 echo ""
-echo "4. Patch activity route so proof-scope posting checks RuntimeTruthEngine"
+echo "4. Patch activity route with proof-scope protection if present"
 
 if [ -f "$ACTIVITY" ]; then
 python3 <<'PY'
@@ -421,35 +289,36 @@ text = path.read_text()
 original = text
 
 if "getRuntimeTruthState" not in text:
+    import_line = 'import { getRuntimeTruthState, isProofCapable } from "../runtime/RuntimeTruthEngine";\n'
     imports = list(re.finditer(r"^import .+;$", text, flags=re.M))
-    line = 'import { getRuntimeTruthState, isProofCapable } from "../runtime/RuntimeTruthEngine";\n'
     if imports:
         idx = imports[-1].end()
-        text = text[:idx] + "\n" + line + text[idx:]
+        text = text[:idx] + "\n" + import_line + text[idx:]
     else:
-        text = line + text
+        text = import_line + text
 
 guard = '''
 function task223NormalizeActivityTruth(body: any) {
   const truth = getRuntimeTruthState();
   const requestedTruth = String(body?.truthLevel || body?.scope || body?.truth || "");
 
-  if (
+  const wantsProof =
     requestedTruth.includes("physical") ||
     requestedTruth.includes("proof") ||
-    requestedTruth.includes("real_native")
-  ) {
-    if (!isProofCapable()) {
-      return {
-        ...body,
-        truthLevel: "simulation_labelled",
-        proofScopeBlocked: true,
-        runtimeTruth: truth,
-        truthBoundary:
-          "Proof-scope event blocked because RuntimeTruthEngine is not proof-capable. Simulation cannot be mislabelled as physical BLE proof.",
-      };
-    }
+    requestedTruth.includes("real_native");
 
+  if (wantsProof && !isProofCapable()) {
+    return {
+      ...body,
+      truthLevel: "simulation_labelled",
+      proofScopeBlocked: true,
+      runtimeTruth: truth,
+      truthBoundary:
+        "Proof-scope event blocked because RuntimeTruthEngine is not proof-capable. Simulation cannot be mislabelled as physical BLE proof.",
+    };
+  }
+
+  if (wantsProof && isProofCapable()) {
     return {
       ...body,
       truthLevel: "physical_proof",
@@ -467,25 +336,24 @@ function task223NormalizeActivityTruth(body: any) {
 '''
 
 if "function task223NormalizeActivityTruth" not in text:
-    text = text + "\n" + guard + "\n"
+    text += "\n" + guard + "\n"
 
-# Safely transform common req.body usages in POST handlers.
 if "task223NormalizeActivityTruth(req.body" not in text:
     text = text.replace("const body = req.body", "const body = task223NormalizeActivityTruth(req.body)")
     text = text.replace("let body = req.body", "let body = task223NormalizeActivityTruth(req.body)")
 
 if text != original:
     path.write_text(text)
-    print("activity.ts patched for proof-scope guard")
+    print("activity.ts patched")
 else:
-    print("activity.ts already patched or no change needed")
+    print("activity.ts unchanged")
 PY
 else
-  echo "WARN: activity.ts missing; runtime verify route still installed."
+  echo "WARN: activity.ts missing; route contract still installed."
 fi
 
 echo ""
-echo "5. Create mobile native attestation client"
+echo "5. Install mobile native runtime attestation client"
 
 cat > "$MOBILE_LIB/nativeRuntimeAttestationClient.ts" <<'TS'
 import { NativeModules, Platform } from "react-native";
@@ -493,20 +361,15 @@ import { NativeModules, Platform } from "react-native";
 export const TASK_223_NATIVE_ATTESTATION_CLIENT_MARKER =
   "TASK_223_NATIVE_ATTESTATION_CLIENT_20260608_A";
 
-type AttestationResult = {
-  ok: boolean;
-  accepted?: boolean;
-  proofCapable?: boolean;
-  error?: string;
-};
-
 type NativeBleStatus = {
+  module?: string;
+  mode?: string;
   modulePresent?: boolean;
   blePermissions?: boolean;
   scanActive?: boolean;
   discoveredCount?: number;
-  mode?: string;
-  module?: string;
+  liveBleActive?: boolean;
+  lastError?: string;
 };
 
 type NativeBleModule = {
@@ -514,8 +377,16 @@ type NativeBleModule = {
   getScanProofStatus?: () => Promise<NativeBleStatus>;
 };
 
+export type NativeAttestationResult = {
+  ok: boolean;
+  accepted?: boolean;
+  proofCapable?: boolean;
+  error?: string;
+};
+
 function getApiBase(): string {
   const globalAny = globalThis as any;
+
   return (
     globalAny.__MAURIMESH_API_BASE__ ||
     globalAny.EXPO_PUBLIC_API_URL ||
@@ -529,11 +400,12 @@ async function readNativeBleStatus(): Promise<NativeBleStatus> {
 
   if (!native) {
     return {
+      module: "MauriMeshBle",
+      mode: "native_module_missing",
       modulePresent: false,
       blePermissions: false,
       scanActive: false,
       discoveredCount: 0,
-      mode: "native_module_missing",
     };
   }
 
@@ -546,15 +418,16 @@ async function readNativeBleStatus(): Promise<NativeBleStatus> {
   }
 
   return {
+    module: "MauriMeshBle",
+    mode: "module_present_status_unavailable",
     modulePresent: true,
     blePermissions: false,
     scanActive: false,
     discoveredCount: 0,
-    mode: "native_module_present_status_unavailable",
   };
 }
 
-export async function sendNativeRuntimeAttestation(): Promise<AttestationResult> {
+export async function sendNativeRuntimeAttestation(): Promise<NativeAttestationResult> {
   if (Platform.OS !== "android") {
     return {
       ok: false,
@@ -574,12 +447,11 @@ export async function sendNativeRuntimeAttestation(): Promise<AttestationResult>
 
   const status = await readNativeBleStatus();
 
-  const features = ["native_bridge"];
-
-  if (status.modulePresent) features.push("native_bridge");
-  if (status.blePermissions) features.push("ble_permissions");
+  const features = new Set<string>();
+  if (status.modulePresent) features.add("native_bridge");
+  if (status.blePermissions) features.add("ble_permissions");
   if (status.scanActive || Number(status.discoveredCount || 0) > 0) {
-    features.push("ble_scan");
+    features.add("ble_scan");
   }
 
   const payload = {
@@ -591,11 +463,13 @@ export async function sendNativeRuntimeAttestation(): Promise<AttestationResult>
     permissionsGranted: Boolean(status.blePermissions),
     scanActive: Boolean(status.scanActive),
     discoveredCount: Number(status.discoveredCount || 0),
-    features: Array.from(new Set(features)),
+    features: Array.from(features),
     createdAt: new Date().toISOString(),
     detail: {
-      mode: status.mode,
       module: status.module,
+      mode: status.mode,
+      liveBleActive: status.liveBleActive,
+      lastError: status.lastError,
     },
   };
 
@@ -698,7 +572,7 @@ export function useNativeBridgeAttestation() {
 TSX
 
 echo ""
-echo "7. Patch ConnectivityContext to send attestation on load when available"
+echo "7. Patch ConnectivityContext boot attestation if present"
 
 if [ -f "$CONNECTIVITY" ]; then
 python3 <<'PY'
@@ -711,18 +585,19 @@ original = text
 if "sendNativeRuntimeAttestation" not in text:
     text = 'import { sendNativeRuntimeAttestation } from "../src/lib/nativeRuntimeAttestationClient";\n' + text
 
-if "TASK_223_CONNECTIVITY_NATIVE_ATTESTATION_BOOT" not in text:
-    boot = '''
+boot = '''
 // TASK_223_CONNECTIVITY_NATIVE_ATTESTATION_BOOT
 void sendNativeRuntimeAttestation().catch((error) => {
   console.warn("[MauriMesh] native runtime attestation failed", error);
 });
 '''
+
+if "TASK_223_CONNECTIVITY_NATIVE_ATTESTATION_BOOT" not in text:
     text += "\n" + boot + "\n"
 
 if text != original:
     path.write_text(text)
-    print("ConnectivityContext patched for native attestation boot")
+    print("ConnectivityContext patched")
 else:
     print("ConnectivityContext already patched")
 PY
@@ -731,9 +606,9 @@ else
 fi
 
 echo ""
-echo "8. Create root app client too, so current APK source can use it"
+echo "8. Install root app native proof reader"
 
-cat > "$ROOT_SRC/nativeRuntimeAttestationClient.ts" <<'TS'
+cat > "$ROOT_RUNTIME/nativeRuntimeAttestationClient.ts" <<'TS'
 import { NativeModules, Platform } from "react-native";
 
 export const TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER =
@@ -742,6 +617,7 @@ export const TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER =
 export async function readRootNativeProofFeatures() {
   if (Platform.OS !== "android") {
     return {
+      marker: TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER,
       nativeModulePresent: false,
       features: [],
       reason: "android_only",
@@ -757,6 +633,7 @@ export async function readRootNativeProofFeatures() {
 
   if (!native) {
     return {
+      marker: TASK_223_ROOT_NATIVE_ATTESTATION_CLIENT_MARKER,
       nativeModulePresent: false,
       features: [],
       reason: "MauriMeshBle missing",
@@ -770,11 +647,12 @@ export async function readRootNativeProofFeatures() {
       ? await native.getStatus()
       : { modulePresent: true };
 
-  const features = ["native_bridge"];
+  const features = new Set<string>();
 
-  if (status.blePermissions) features.push("ble_permissions");
+  if (status.modulePresent ?? true) features.add("native_bridge");
+  if (status.blePermissions) features.add("ble_permissions");
   if (status.scanActive || Number(status.discoveredCount || 0) > 0) {
-    features.push("ble_scan");
+    features.add("ble_scan");
   }
 
   return {
@@ -783,7 +661,7 @@ export async function readRootNativeProofFeatures() {
     permissionsGranted: Boolean(status.blePermissions),
     scanActive: Boolean(status.scanActive),
     discoveredCount: Number(status.discoveredCount || 0),
-    features,
+    features: Array.from(features),
     status,
   };
 }
@@ -801,7 +679,7 @@ echo "#223 Auto Proof Scope Audit"
 echo "============================================================"
 
 echo ""
-echo "1. RuntimeTruthEngine methods"
+echo "1. RuntimeTruthEngine"
 grep -RniE "markRealNative|acceptNativeAttestation|isProofCapable|getRuntimeTruthState|TASK_223_RUNTIME_TRUTH" \
   artifacts/api-server/src/runtime 2>/dev/null || true
 
@@ -811,7 +689,7 @@ grep -RniE "registerRuntimeVerifyRoute|/api/runtime/verify|/api/runtime/truth|TA
   artifacts/api-server/src/routes 2>/dev/null || true
 
 echo ""
-echo "3. Activity proof-scope guard"
+echo "3. Activity proof-scope protection"
 grep -RniE "task223NormalizeActivityTruth|proofScopeBlocked|proofScopeAccepted|simulation_labelled|physical_proof" \
   artifacts/api-server/src/routes/activity.ts 2>/dev/null || true
 
@@ -821,8 +699,8 @@ grep -RniE "sendNativeRuntimeAttestation|NativeBridgeProvider|TASK_223_NATIVE_AT
   artifacts/messenger-mobile src 2>/dev/null || true
 
 echo ""
-echo "5. Simulation protection search"
-grep -RniE "truthLevel.*physical|physical_proof|simulation_labelled|proofScope" \
+echo "5. Remaining risky proof labels"
+grep -RniE "truthLevel.*physical|physical_proof|real_native|proofScope" \
   artifacts/api-server/src artifacts/messenger-mobile src 2>/dev/null | head -250 || true
 
 echo ""
@@ -834,40 +712,40 @@ SH
 chmod +x "$SCRIPTS/audit-task-223-auto-proof-scope.sh"
 
 echo ""
-echo "10. Create documentation"
+echo "10. Documentation"
 
 cat > "$DOCS/task-223-auto-proof-scope-native-attestation.md" <<'MD'
 # Task #223 — Auto Promote Events to Proof Scope Once Real BLE Is Detected
 
 Marker: `TASK_223_RUNTIME_TRUTH_ENGINE_AUTO_NATIVE_20260608_A`
 
-## Installed
+## Added
 
 API:
 - `RuntimeTruthEngine.markRealNative(features, attestation)`
 - `RuntimeTruthEngine.acceptNativeAttestation(attestation)`
-- `RuntimeTruthEngine.isProofCapable()`
-- `/api/runtime/verify`
-- `/api/runtime/truth`
+- `RuntimeTruthEngine.isProofCapable(feature?)`
+- `GET /api/runtime/truth`
+- `POST /api/runtime/verify`
 
 Mobile:
 - `nativeRuntimeAttestationClient.ts`
 - `NativeBridgeContext.tsx`
-- Connectivity boot attestation patch when `ConnectivityContext.tsx` exists
+- Connectivity boot attestation when `ConnectivityContext.tsx` exists
 
 Root app:
 - `src/maurimesh/runtime/nativeRuntimeAttestationClient.ts`
 
-## Proof rule
+## Promotion rule
 
-The runtime becomes proof-capable only when:
+Runtime becomes proof-capable only when:
 
 - platform is `android`
 - source is not `simulation`
 - native module is present
-- feature list includes `native_bridge`
+- features include `native_bridge`
 
-`ble_scan` is added only when the native scan is active or discovered count is greater than zero.
+`ble_scan` is accepted only when the native module reports scan active or discovered count greater than zero.
 
 ## Truth boundary
 
@@ -875,12 +753,11 @@ This does not prove advertise, connect, TX/RX, ACK, relay, or store-forward.
 
 It only unlocks proof-scope posting for features supported by real native attestation.
 
-Simulation events must remain labelled as simulation.
+Simulation events remain labelled as simulation.
 MD
 
 echo ""
 echo "11. Validate markers"
-
 grep -RniE "TASK_223|markRealNative|acceptNativeAttestation|isProofCapable|sendNativeRuntimeAttestation" \
   artifacts src docs scripts 2>/dev/null || true
 
@@ -903,12 +780,12 @@ echo "#223 AUTO PROOF SCOPE INSTALLED"
 echo "Backup: $BACKUP"
 echo ""
 echo "Next required check:"
-echo "Find API bootstrap and register registerRuntimeVerifyRoute(app) if route modules are not auto-loaded."
+echo "Find API bootstrap and register registerRuntimeVerifyRoute(app) if routes are not auto-loaded."
 echo ""
-echo "Physical proof target after build:"
-echo "- Native module PRESENT"
-echo "- BLE scan active or discoveredCount > 0"
-echo "- POST /api/runtime/verify accepted"
-echo "- isProofCapable() true"
-echo "- activity proof-scope accepted only after native attestation"
+echo "Completion proof target:"
+echo "1. Native module PRESENT"
+echo "2. BLE scan active or discoveredCount > 0"
+echo "3. POST /api/runtime/verify accepted"
+echo "4. isProofCapable() true"
+echo "5. activity proof-scope blocked before attestation and accepted after attestation"
 echo "============================================================"

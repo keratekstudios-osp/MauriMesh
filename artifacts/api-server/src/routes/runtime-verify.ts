@@ -1,6 +1,7 @@
 import {
   acceptNativeAttestation,
   getRuntimeTruthState,
+  isProofCapable,
 } from "../runtime/RuntimeTruthEngine";
 
 export const TASK_223_RUNTIME_VERIFY_ROUTE_MARKER =
@@ -8,10 +9,13 @@ export const TASK_223_RUNTIME_VERIFY_ROUTE_MARKER =
 
 export function registerRuntimeVerifyRoute(app: any) {
   app.get("/api/runtime/truth", async (_req: any, res: any) => {
+    const truth = getRuntimeTruthState();
+
     res.json({
       ok: true,
       marker: TASK_223_RUNTIME_VERIFY_ROUTE_MARKER,
-      truth: getRuntimeTruthState(),
+      proofCapable: isProofCapable(),
+      truth,
     });
   });
 
@@ -34,6 +38,10 @@ export function registerRuntimeVerifyRoute(app: any) {
         createdAt: String(body.createdAt || new Date().toISOString()),
         deviceModel: body.deviceModel ? String(body.deviceModel) : undefined,
         buildId: body.buildId ? String(body.buildId) : undefined,
+        detail:
+          body.detail && typeof body.detail === "object"
+            ? body.detail
+            : {},
       };
 
       const accepted =
@@ -53,7 +61,7 @@ export function registerRuntimeVerifyRoute(app: any) {
         proofCapable: truth.proofCapable,
         truth,
         truthBoundary:
-          "Attestation is accepted only from a real Android native bridge. Simulation cannot promote proof scope.",
+          "Native attestation is accepted only from a real Android native bridge. Simulation cannot promote proof scope.",
       });
     } catch (error) {
       res.status(500).json({
@@ -63,10 +71,4 @@ export function registerRuntimeVerifyRoute(app: any) {
       });
     }
   });
-
-  // NOTE: the unauthenticated POST /api/runtime/mark-real-native endpoint was
-  // removed. It allowed any client to promote proof scope to "real_native"
-  // without a validated native attestation. Proof-scope promotion now flows
-  // exclusively through POST /api/runtime/verify, which validates the
-  // attestation via hasRealNativeMinimum() before calling acceptNativeAttestation().
 }
