@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: enterprise
+    description: Operator clearance, legal-doc acceptance, and admin command history
 paths:
   /healthz:
     get:
@@ -24,7 +26,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /enterprise/operators:
+    get:
+      operationId: listOperators
+      tags: [enterprise]
+      summary: List operator clearance records
+      responses:
+        "200":
+          description: Operator list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorListResponse"
+    post:
+      operationId: upsertOperator
+      tags: [enterprise]
+      summary: Create or update an operator clearance record (keyed by nodeId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OperatorInput"
+      responses:
+        "200":
+          description: Saved operator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorResponse"
+  /enterprise/operators/{id}/suspend:
+    post:
+      operationId: suspendOperator
+      tags: [enterprise]
+      summary: Suspend an operator
+      parameters:
+        - $ref: "#/components/parameters/OperatorId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuspendInput"
+      responses:
+        "200":
+          description: Suspended operator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorResponse"
+  /enterprise/operators/{id}/reinstate:
+    post:
+      operationId: reinstateOperator
+      tags: [enterprise]
+      summary: Reinstate a suspended operator
+      parameters:
+        - $ref: "#/components/parameters/OperatorId"
+      responses:
+        "200":
+          description: Reinstated operator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperatorResponse"
+  /enterprise/legal-docs:
+    get:
+      operationId: listAcceptedDocs
+      tags: [enterprise]
+      summary: List legal-document acceptance records
+      responses:
+        "200":
+          description: Accepted docs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedDocListResponse"
+  /enterprise/legal-docs/accept:
+    post:
+      operationId: acceptLegalDoc
+      tags: [enterprise]
+      summary: Record acceptance of a legal document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptedDocInput"
+      responses:
+        "200":
+          description: Recorded acceptance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedDocResponse"
+  /enterprise/admin-commands:
+    get:
+      operationId: listAdminCommands
+      tags: [enterprise]
+      summary: List admin command history
+      responses:
+        "200":
+          description: Admin command list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCommandListResponse"
+    post:
+      operationId: appendAdminCommand
+      tags: [enterprise]
+      summary: Append an entry to the admin command history
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCommandInput"
+      responses:
+        "200":
+          description: Recorded command
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCommandResponse"
 components:
+  parameters:
+    OperatorId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +164,194 @@ components:
           type: string
       required:
         - status
+    Operator:
+      type: object
+      properties:
+        id:
+          type: string
+        nodeId:
+          type: string
+        name:
+          type: string
+        clearanceLevel:
+          type: string
+        status:
+          type: string
+        suspendedReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nodeId
+        - name
+        - clearanceLevel
+        - status
+        - createdAt
+        - updatedAt
+    OperatorInput:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        name:
+          type: string
+        clearanceLevel:
+          type: string
+        status:
+          type: string
+        suspendedReason:
+          type: string
+          nullable: true
+      required:
+        - nodeId
+    SuspendInput:
+      type: object
+      properties:
+        reason:
+          type: string
+    OperatorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        operator:
+          $ref: "#/components/schemas/Operator"
+      required:
+        - ok
+        - operator
+    OperatorListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        operators:
+          type: array
+          items:
+            $ref: "#/components/schemas/Operator"
+      required:
+        - ok
+        - operators
+    AcceptedDoc:
+      type: object
+      properties:
+        id:
+          type: string
+        nodeId:
+          type: string
+        docType:
+          type: string
+        docVersion:
+          type: string
+        acceptedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nodeId
+        - docType
+        - docVersion
+        - acceptedAt
+        - createdAt
+    AcceptedDocInput:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        docType:
+          type: string
+        docVersion:
+          type: string
+      required:
+        - nodeId
+        - docType
+    AcceptedDocResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        acceptedDoc:
+          $ref: "#/components/schemas/AcceptedDoc"
+      required:
+        - ok
+        - acceptedDoc
+    AcceptedDocListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        acceptedDocs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AcceptedDoc"
+      required:
+        - ok
+        - acceptedDocs
+    AdminCommand:
+      type: object
+      properties:
+        id:
+          type: string
+        actor:
+          type: string
+        command:
+          type: string
+        args:
+          type: object
+          additionalProperties: true
+        result:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - actor
+        - command
+        - result
+        - createdAt
+    AdminCommandInput:
+      type: object
+      properties:
+        actor:
+          type: string
+        command:
+          type: string
+        args:
+          type: object
+          additionalProperties: true
+        result:
+          type: string
+      required:
+        - command
+    AdminCommandResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        adminCommand:
+          $ref: "#/components/schemas/AdminCommand"
+      required:
+        - ok
+        - adminCommand
+    AdminCommandListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        adminCommands:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCommand"
+      required:
+        - ok
+        - adminCommands
 

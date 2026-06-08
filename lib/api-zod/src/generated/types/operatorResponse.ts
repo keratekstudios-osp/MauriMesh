@@ -5,7 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { Operator } from './operator';
 
-export interface HealthStatus {
-  status: string;
+export interface OperatorResponse {
+  ok: boolean;
+  operator: Operator;
 }

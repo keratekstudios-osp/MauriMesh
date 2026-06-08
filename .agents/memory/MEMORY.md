@@ -16,3 +16,4 @@
 - [MauriMesh message store / zustand gap](maurimesh-message-store-zustand.md) — useMeshStore needs zustand (not installed) → bundle breaks; use dependency-free useLiveMesh spine for live mesh UI.
 - [MauriMesh live screens pattern](maurimesh-live-screens.md) — mesh screens are self-contained (live-mesh-ops style) on useLiveMesh; backup app/mesh screens use stale rich components/DS tokens that no longer exist.
 - [MauriMesh live charts](maurimesh-live-charts.md) — RN app: charts built from animated Views (no Recharts/SVG); time-series via client-side useMeshHistory rolling window over cumulative spine snapshots.
+- [Enterprise persistence layer](enterprise-persistence.md) — operators/accepted_docs/admin_commands tables + /api/enterprise routes; fail-closed operator-session auth; push+committed-SQL+orval pipeline.

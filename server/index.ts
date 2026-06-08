@@ -1,6 +1,7 @@
 import express from "express";
 import { createMeshGovernanceSim } from "../src/lib/meshGovernanceSim";
 import { createGovernanceHistory } from "../src/lib/governanceHistory";
+import { createEnterpriseRouter } from "./enterpriseRoutes";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -70,6 +71,11 @@ setInterval(
  *     - EAS production / signed APK build and on-device install.
  * ============================================================================
  */
+
+// Enterprise persistence routes (operators, legal-doc acceptance, admin command
+// history) backed by Postgres via Drizzle. Unlike the mesh status simulation,
+// these endpoints persist real records across sessions.
+app.use("/api/enterprise", createEnterpriseRouter());
 
 app.get("/", (_req, res) => {
   res.status(200).json({
