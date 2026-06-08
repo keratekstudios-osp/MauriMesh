@@ -1,4 +1,6 @@
 package com.maurimesh.messenger
+import com.facebook.react.bridge.WritableMap
+import android.util.Base64
 
 import android.Manifest
 import android.bluetooth.BluetoothManager
@@ -18,6 +20,12 @@ import com.facebook.react.bridge.ReactMethod
 class MauriMeshBleModule(
   private val reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
+  private val centralClient = MeshCentralClient(reactContext)
+  private var rawPacketGattServer: MeshRawPacketGattServer? = null
+  private var rawPacketAckCount: Int = 0
+  private var rawPacketLastAckTarget: String? = null
+  private var rawPacketLastAckSentAtMs: Long = 0L
+
 
   private var scanner: BluetoothLeScanner? = null
   private var scanCallback: ScanCallback? = null
@@ -145,6 +153,7 @@ class MauriMeshBleModule(
 
       scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+          centralClient.cachePeer(result.device, result.rssi)
           discoveredCount += 1
           lastDeviceName = result.device?.name ?: "unknown"
           lastDeviceAddress = result.device?.address ?: "unknown"
@@ -208,4 +217,128 @@ class MauriMeshBleModule(
       promise.reject("MAURIMESH_BLE_SCAN_STOP_ERROR", error)
     }
   }
+
+
+  // TASK_165_NATIVE_MODULE_RAW_PACKET_BRIDGE_20260608_ACTIVE_ANDROID_A
+  @ReactMethod
+  fun sendRawPacket(nodeId: String, base64Payload: String, promise: Promise) {
+    try {
+      val bytes = Base64.decode(base64Payload, Base64.NO_WRAP)
+      val ok = centralClient.sendRawPacket(nodeId, bytes)
+      promise.resolve(ok)
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_SEND_RAW_PACKET_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun broadcastRawPacket(base64Payload: String, promise: Promise) {
+    try {
+      val bytes = Base64.decode(base64Payload, Base64.NO_WRAP)
+      val successCount = centralClient.broadcastRawPacket(bytes)
+      promise.resolve(successCount)
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_BROADCAST_RAW_PACKET_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun getRawPacketPeerCount(promise: Promise) {
+    try {
+      promise.resolve(centralClient.getRawPacketPeerCount())
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_RAW_PACKET_PEER_COUNT_ERROR", error)
+    }
+  }
+
+
+
+
+  // TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A
+  @ReactMethod
+  fun startRawPacketReceiver(promise: Promise) {
+    try {
+      if (rawPacketGattServer == null) {
+        rawPacketGattServer = MeshRawPacketGattServer(reactContext) { event ->
+          centralClient.cachePeerAddress(event.fromAddress, "ack-peer", null)
+
+          val ackText =
+            "MAURIMESH_ACK|from=${event.fromAddress}|bytes=${event.bytes.size}|at=${event.receivedAtMs}"
+          val ackBytes = ackText.toByteArray(Charsets.UTF_8)
+
+          val ackSent = centralClient.sendRawPacket(event.fromAddress, ackBytes)
+
+          if (ackSent) {
+            rawPacketAckCount += 1
+            rawPacketLastAckTarget = event.fromAddress
+            rawPacketLastAckSentAtMs = System.currentTimeMillis()
+          }
+
+          android.util.Log.i(
+            "MauriMeshBle",
+            "[TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A] RX=${event.bytes.size} ACK_SENT=$ackSent target=${event.fromAddress}"
+          )
+        }
+      }
+
+      val ok = rawPacketGattServer?.start() == true
+      promise.resolve(rawPacketReceiverStatusMap(ok))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_START_RAW_PACKET_RECEIVER_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun stopRawPacketReceiver(promise: Promise) {
+    try {
+      val ok = rawPacketGattServer?.stop() ?: true
+      promise.resolve(rawPacketReceiverStatusMap(ok))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_STOP_RAW_PACKET_RECEIVER_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun getRawPacketReceiverStatus(promise: Promise) {
+    try {
+      promise.resolve(rawPacketReceiverStatusMap(true))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_RAW_PACKET_RECEIVER_STATUS_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun sendRawPacketUtf8(nodeId: String, text: String, promise: Promise) {
+    try {
+      val ok = centralClient.sendRawPacket(nodeId, text.toByteArray(Charsets.UTF_8))
+      promise.resolve(ok)
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_SEND_RAW_PACKET_UTF8_ERROR", error)
+    }
+  }
+
+  private fun rawPacketReceiverStatusMap(ok: Boolean): WritableMap {
+    val map = Arguments.createMap()
+    val status = rawPacketGattServer?.getStatusMap() ?: emptyMap<String, Any?>()
+
+    map.putBoolean("ok", ok)
+    map.putString("marker", "TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A")
+    map.putString("serverMarker", status["marker"] as? String ?: "not_started")
+    map.putBoolean("running", status["running"] as? Boolean ?: false)
+    map.putInt("receivedCount", status["receivedCount"] as? Int ?: 0)
+    map.putString("lastFromAddress", status["lastFromAddress"] as? String)
+    map.putInt("lastPacketSize", status["lastPacketSize"] as? Int ?: 0)
+    map.putDouble("lastReceivedAtMs", ((status["lastReceivedAtMs"] as? Long) ?: 0L).toDouble())
+    map.putString("lastError", status["lastError"] as? String)
+    map.putString("serviceUuid", status["serviceUuid"] as? String)
+    map.putString("characteristicUuid", status["characteristicUuid"] as? String)
+    map.putInt("ackCount", rawPacketAckCount)
+    map.putString("lastAckTarget", rawPacketLastAckTarget)
+    map.putDouble("lastAckSentAtMs", rawPacketLastAckSentAtMs.toDouble())
+    map.putInt("peerCount", centralClient.getRawPacketPeerCount())
+
+    return map
+  }
+
+
 }

@@ -3,16 +3,15 @@ set -euo pipefail
 
 echo ""
 echo "============================================================"
-echo "#165 — ADAPTIVE MeshCentralClient RAW PACKET TRANSPORT"
-echo "Adds sendRawPacket() + broadcastRawPacket() to the real file path"
-echo "NO fake file creation if MeshCentralClient is missing"
-echo "NO deletion"
+echo "#165 — MeshCentralClient RAW PACKET TRANSPORT"
+echo "Adds sendRawPacket() + broadcastRawPacket()"
+echo "Adaptive path finder. No fake file creation."
 echo "============================================================"
 echo ""
 
 ROOT="$(pwd)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP="$HOME/maurimesh-router-backups/task-165-adaptive-$STAMP"
+BACKUP="$HOME/maurimesh-router-backups/task-165-raw-packet-$STAMP"
 DOCS="$ROOT/docs"
 SCRIPTS="$ROOT/scripts"
 
@@ -23,27 +22,27 @@ echo "1. Locate MeshCentralClient.kt"
 
 CLIENT="$(find . -type f -name "MeshCentralClient.kt" \
   -not -path "./node_modules/*" \
-  -not -path "./dist/*" \
   -not -path "./.git/*" \
+  -not -path "./dist/*" \
   | head -1 || true)"
 
 if [ -z "$CLIENT" ]; then
-  echo "ERROR: MeshCentralClient.kt was not found in this workspace."
+  echo "ERROR: MeshCentralClient.kt was not found."
   echo ""
-  echo "Run this and send the output back:"
+  echo "Run this finder and send the output back:"
   echo "find . -type f \\( -name '*Central*.kt' -o -name '*Ble*.kt' -o -name '*Gatt*.kt' -o -name 'MauriMeshBleModule.kt' \\) -not -path './node_modules/*' | sort"
   exit 1
 fi
 
 BLE_DIR="$(dirname "$CLIENT")"
 MODULE="$(find "$BLE_DIR" -maxdepth 1 -type f -name "MauriMeshBleModule.kt" | head -1 || true)"
-EVENTS="$(find "$BLE_DIR" -maxdepth 1 -type f -name "MeshBleEventEmitter.kt" | head -1 || true)"
+EMITTER="$(find "$BLE_DIR" -maxdepth 1 -type f -name "MeshBleEventEmitter.kt" | head -1 || true)"
 TYPES="$BLE_DIR/MeshRawPacketTypes.kt"
 
-echo "Found client: $CLIENT"
+echo "Client: $CLIENT"
 echo "BLE dir: $BLE_DIR"
 echo "Module: ${MODULE:-not found}"
-echo "Emitter: ${EVENTS:-not found}"
+echo "Emitter: ${EMITTER:-not found}"
 
 echo ""
 echo "2. Backup BLE directory"
@@ -51,7 +50,7 @@ cp -R "$BLE_DIR" "$BACKUP/ble-dir"
 echo "Backup: $BACKUP"
 
 echo ""
-echo "3. Install raw packet UUID/types"
+echo "3. Add raw packet UUID/types"
 
 cat > "$TYPES" <<'KT'
 package com.maurimesh.ble
@@ -76,51 +75,7 @@ data class MeshPeerCacheEntry(
 KT
 
 echo ""
-echo "4. Patch MeshBleEventEmitter if present"
-
-if [ -n "${EVENTS:-}" ] && [ -f "$EVENTS" ]; then
-python3 <<PY
-from pathlib import Path
-
-path = Path("$EVENTS")
-text = path.read_text()
-original = text
-
-if "fun rawPacketInfo(" not in text:
-    insert = '''
-  fun rawPacketInfo(message: String, data: Map<String, Any?> = emptyMap()) {
-    try {
-      emit("RAW_PACKET_INFO", message, data)
-    } catch (_: Throwable) {
-      android.util.Log.i("MauriMeshBle", "[RAW_PACKET_INFO] $message $data")
-    }
-  }
-
-  fun rawPacketError(message: String, data: Map<String, Any?> = emptyMap()) {
-    try {
-      emit("RAW_PACKET_ERROR", message, data)
-    } catch (_: Throwable) {
-      android.util.Log.e("MauriMeshBle", "[RAW_PACKET_ERROR] $message $data")
-    }
-  }
-'''
-    idx = text.rfind("}")
-    if idx == -1:
-        raise SystemExit("ERROR: Could not patch MeshBleEventEmitter.kt")
-    text = text[:idx] + insert + "\n" + text[idx:]
-
-if text != original:
-    path.write_text(text)
-    print("Emitter patched")
-else:
-    print("Emitter already patched")
-PY
-else
-  echo "WARN: MeshBleEventEmitter.kt not found. MeshCentralClient will use Log fallback."
-fi
-
-echo ""
-echo "5. Patch MeshCentralClient.kt"
+echo "4. Patch MeshCentralClient.kt"
 
 python3 <<PY
 from pathlib import Path
@@ -130,21 +85,18 @@ path = Path("$CLIENT")
 text = path.read_text()
 original = text
 
-if "fun sendRawPacket(nodeId: String, bytes: ByteArray): Boolean" in text and "fun broadcastRawPacket(bytes: ByteArray)" in text:
-    print("MeshCentralClient already has #165 methods")
+if "TASK_165_MESHCENTRAL_RAW_PACKET_TRANSPORT_20260608_A" in text:
+    print("MeshCentralClient already patched")
     raise SystemExit(0)
 
-# Package must remain the original one.
-package_match = re.search(r"^package\\s+([^\\n]+)", text, re.M)
-pkg = package_match.group(1).strip() if package_match else "com.maurimesh.ble"
-
-required_imports = [
+imports = [
     "import android.bluetooth.BluetoothAdapter",
     "import android.bluetooth.BluetoothDevice",
     "import android.bluetooth.BluetoothGatt",
     "import android.bluetooth.BluetoothGattCallback",
     "import android.bluetooth.BluetoothGattCharacteristic",
     "import android.bluetooth.BluetoothGattService",
+    "import android.bluetooth.BluetoothManager",
     "import android.bluetooth.BluetoothProfile",
     "import android.content.Context",
     "import android.os.Build",
@@ -154,7 +106,7 @@ required_imports = [
     "import java.util.concurrent.TimeUnit",
 ]
 
-for imp in required_imports:
+for imp in imports:
     if imp not in text:
         m = re.search(r"^(package\\s+[^\\n]+\\n)", text, re.M)
         if m:
@@ -169,17 +121,21 @@ if not class_match:
 constructor = class_match.group(1)
 class_open_end = class_match.end()
 
-context_candidates = re.findall(r"(?:private\\s+val|val|var)\\s+(\\w+)\\s*:\\s*(?:ReactApplicationContext|Context)", constructor)
-if not context_candidates:
-    context_candidates = re.findall(r"(\\w+)\\s*:\\s*(?:ReactApplicationContext|Context)", constructor)
-
+context_candidates = re.findall(r"(?:private\\s+val|private\\s+var|val|var)?\\s*(\\w+)\\s*:\\s*(?:ReactApplicationContext|Context)", constructor)
 if not context_candidates:
     raise SystemExit("ERROR: Could not infer Android Context parameter in MeshCentralClient constructor.")
 
 context_name = context_candidates[0]
 
-event_candidates = re.findall(r"(?:private\\s+val|val|var)\\s+(\\w+)\\s*:\\s*MeshBleEventEmitter", constructor)
-event_name = event_candidates[0] if event_candidates else None
+emitter_candidates = re.findall(r"(?:private\\s+val|private\\s+var|val|var)?\\s*(\\w+)\\s*:\\s*MeshBleEventEmitter", constructor)
+emitter_name = emitter_candidates[0] if emitter_candidates else None
+
+if emitter_name:
+    info_call = f'{emitter_name}.emit("RAW_PACKET_INFO", message, data)'
+    error_call = f'{emitter_name}.emit("RAW_PACKET_ERROR", message, data)'
+else:
+    info_call = 'Log.i("MauriMeshBle", "[RAW_PACKET_INFO] $message $data")'
+    error_call = 'Log.e("MauriMeshBle", "[RAW_PACKET_ERROR] $message $data")'
 
 fields = f'''
 
@@ -189,7 +145,7 @@ fields = f'''
 
   private fun task165RawInfo(message: String, data: Map<String, Any?> = emptyMap()) {{
     try {{
-      {"%s.rawPacketInfo(message, data)" % event_name if event_name else 'Log.i("MauriMeshBle", "[RAW_PACKET_INFO] $message $data")'}
+      {info_call}
     }} catch (_: Throwable) {{
       Log.i("MauriMeshBle", "[RAW_PACKET_INFO] $message $data")
     }}
@@ -197,7 +153,7 @@ fields = f'''
 
   private fun task165RawError(message: String, data: Map<String, Any?> = emptyMap()) {{
     try {{
-      {"%s.rawPacketError(message, data)" % event_name if event_name else 'Log.e("MauriMeshBle", "[RAW_PACKET_ERROR] $message $data")'}
+      {error_call}
     }} catch (_: Throwable) {{
       Log.e("MauriMeshBle", "[RAW_PACKET_ERROR] $message $data")
     }}
@@ -208,6 +164,7 @@ fields = f'''
       val address = device?.address ?: return
       val name = try {{ device.name }} catch (_: SecurityException) {{ null }}
       val nodeId = address
+
       val entry = MeshPeerCacheEntry(
         nodeId = nodeId,
         address = address,
@@ -215,6 +172,7 @@ fields = f'''
         lastSeenAtMs = System.currentTimeMillis(),
         rssi = rssi
       )
+
       rawPacketScanCache[nodeId] = entry
       rawPacketAddressToNodeId[address] = nodeId
     }} catch (error: Throwable) {{
@@ -227,10 +185,9 @@ fields = f'''
 
 '''
 
-if "TASK_165_MESHCENTRAL_RAW_PACKET_TRANSPORT_20260608_A" not in text:
-    text = text[:class_open_end] + fields + text[class_open_end:]
+text = text[:class_open_end] + fields + text[class_open_end:]
 
-# Patch onScanResult if ScanResult callback exists.
+# Cache peers from common scan callback shapes.
 if "task165CachePeerFromScan(result.device" not in text:
     text = re.sub(
         r"(override\\s+fun\\s+onScanResult\\s*\\([^)]*result\\s*:\\s*ScanResult[^)]*\\)\\s*\\{)",
@@ -240,7 +197,6 @@ if "task165CachePeerFromScan(result.device" not in text:
         flags=re.S,
     )
 
-# Patch onBatchScanResults if present.
 if "task165CachePeerFromScan(scanResult.device" not in text:
     text = re.sub(
         r"(override\\s+fun\\s+onBatchScanResults\\s*\\([^)]*results\\s*:\\s*MutableList<ScanResult>[^)]*\\)\\s*\\{)",
@@ -252,13 +208,6 @@ if "task165CachePeerFromScan(scanResult.device" not in text:
 
 methods = f'''
 
-  /**
-   * #165 — Send raw engine-built packet bytes to a scanned BLE peer.
-   *
-   * Truth boundary:
-   * - This submits a BLE GATT write using WRITE_TYPE_NO_RESPONSE.
-   * - It does not prove packet delivery or ACK by itself.
-   */
   fun sendRawPacket(nodeId: String, bytes: ByteArray): Boolean {{
     if (nodeId.isBlank()) {{
       task165RawError("sendRawPacket refused blank nodeId", mapOf("bytes" to bytes.size))
@@ -288,11 +237,6 @@ methods = f'''
     return writeRawPacketToPeer(peer, bytes)
   }}
 
-  /**
-   * #165 — Broadcast raw bytes to every currently cached scanned peer.
-   *
-   * Returns number of successful write submissions.
-   */
   fun broadcastRawPacket(bytes: ByteArray): Int {{
     if (bytes.isEmpty()) {{
       task165RawError("broadcastRawPacket refused empty payload")
@@ -351,7 +295,7 @@ methods = f'''
 
     try {{
       val bluetoothManager =
-        {context_name}.getSystemService(Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager
+        {context_name}.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
 
       val adapter: BluetoothAdapter? = bluetoothManager?.adapter
 
@@ -560,21 +504,19 @@ methods = f'''
 
 idx = text.rfind("}")
 if idx == -1:
-    raise SystemExit("ERROR: Could not find class closing brace in MeshCentralClient.kt")
+    raise SystemExit("ERROR: Could not find closing brace in MeshCentralClient.kt")
 
-text = text[:idx] + methods + "\n" + text[idx:]
+text = text[:idx] + methods + "\\n" + text[idx:]
 
-if text != original:
-    path.write_text(text)
-    print("Patched MeshCentralClient.kt")
-    print("Context:", context_name)
-    print("Emitter:", event_name or "Log fallback")
-else:
-    print("No changes written")
+path.write_text(text)
+
+print("Patched MeshCentralClient.kt")
+print("Context:", context_name)
+print("Emitter:", emitter_name or "Log fallback")
 PY
 
 echo ""
-echo "6. Patch MauriMeshBleModule.kt bridge if present"
+echo "5. Patch MauriMeshBleModule.kt bridge if present"
 
 if [ -n "${MODULE:-}" ] && [ -f "$MODULE" ]; then
 python3 <<PY
@@ -585,34 +527,25 @@ path = Path("$MODULE")
 text = path.read_text()
 original = text
 
-if "fun sendRawPacket(nodeId: String" in text and "fun broadcastRawPacket(base64Payload" in text:
-    print("MauriMeshBleModule already has raw packet bridge methods")
+if "TASK_165_NATIVE_MODULE_RAW_PACKET_BRIDGE_20260608_A" in text:
+    print("MauriMeshBleModule already patched")
     raise SystemExit(0)
 
-# Ensure imports.
-imports = [
+for imp in [
     "import com.facebook.react.bridge.Promise",
     "import com.facebook.react.bridge.ReactMethod",
-]
-for imp in imports:
+]:
     if imp not in text:
         m = re.search(r"^(package\\s+[^\\n]+\\n)", text, re.M)
         if m:
             text = text[:m.end()] + imp + "\\n" + text[m.end():]
 
-candidates = re.findall(r"(?:private\\s+val|val|var)\\s+(\\w+)\\s*:\\s*MeshCentralClient", text)
-central = candidates[0] if candidates else None
-
-if not central:
-    if "centralClient" in text:
-        central = "centralClient"
-    else:
-        print("WARN: Could not infer MeshCentralClient property in MauriMeshBleModule. Skipping module bridge patch.")
-        path.write_text(text)
-        raise SystemExit(0)
+candidates = re.findall(r"(?:private\\s+val|private\\s+var|val|var)\\s+(\\w+)\\s*:\\s*MeshCentralClient", text)
+central = candidates[0] if candidates else "centralClient"
 
 methods = f'''
 
+  // TASK_165_NATIVE_MODULE_RAW_PACKET_BRIDGE_20260608_A
   @ReactMethod
   fun sendRawPacket(nodeId: String, base64Payload: String, promise: Promise) {{
     try {{
@@ -648,22 +581,19 @@ methods = f'''
 
 idx = text.rfind("}")
 if idx == -1:
-    raise SystemExit("ERROR: Could not find MauriMeshBleModule class closing brace")
+    raise SystemExit("ERROR: Could not find closing brace in MauriMeshBleModule.kt")
 
-text = text[:idx] + methods + "\n" + text[idx:]
+text = text[:idx] + methods + "\\n" + text[idx:]
+path.write_text(text)
 
-if text != original:
-    path.write_text(text)
-    print("Patched MauriMeshBleModule.kt using central client:", central)
-else:
-    print("MauriMeshBleModule unchanged")
+print("Patched MauriMeshBleModule.kt with central client:", central)
 PY
 else
-  echo "WARN: MauriMeshBleModule.kt not found beside MeshCentralClient. Client methods still installed."
+  echo "WARN: MauriMeshBleModule.kt not found beside MeshCentralClient. Client methods installed only."
 fi
 
 echo ""
-echo "7. Create JS raw packet client"
+echo "6. Add JS raw packet client"
 
 mkdir -p "$ROOT/src/maurimesh/ble"
 
@@ -739,7 +669,7 @@ export async function getRawPacketPeerCount(): Promise<number> {
 TS
 
 echo ""
-echo "8. Create audit script"
+echo "7. Audit script"
 
 cat > "$SCRIPTS/audit-task-165-raw-packet-transport.sh" <<SH
 #!/usr/bin/env bash
@@ -753,16 +683,11 @@ echo "#165 Raw Packet Transport Audit"
 echo "============================================================"
 
 echo ""
-echo "Client: \$CLIENT"
-
-test -f "\$CLIENT" && echo "MeshCentralClient exists"
-
-echo ""
 echo "1. Required client methods"
-grep -nE "fun sendRawPacket\\(nodeId: String, bytes: ByteArray\\): Boolean|fun broadcastRawPacket\\(bytes: ByteArray\\): Int|getRawPacketPeerCount|writeRawPacketToPeer" "\$CLIENT"
+grep -nE "sendRawPacket\\(nodeId: String, bytes: ByteArray\\): Boolean|broadcastRawPacket\\(bytes: ByteArray\\): Int|getRawPacketPeerCount|writeRawPacketToPeer" "\$CLIENT"
 
 echo ""
-echo "2. Required GATT write path"
+echo "2. Required GATT path"
 grep -nE "WRITE_TYPE_NO_RESPONSE|writeCharacteristic|connectGatt|discoverServices|MeshRawPacketUuids" "\$CLIENT"
 
 echo ""
@@ -770,31 +695,27 @@ echo "3. Scan cache"
 grep -nE "rawPacketScanCache|task165CachePeerFromScan|MeshPeerCacheEntry" "\$CLIENT"
 
 echo ""
-echo "4. Error logging"
-grep -nE "task165RawError|task165RawInfo|RAW_PACKET_ERROR|RAW_PACKET_INFO" "\$CLIENT" "$EVENTS" 2>/dev/null || true
-
-echo ""
-echo "5. Module bridge"
+echo "4. Module bridge"
 if [ -n "\$MODULE" ] && [ -f "\$MODULE" ]; then
-  grep -nE "sendRawPacket|broadcastRawPacket|getRawPacketPeerCount" "\$MODULE" || true
+  grep -nE "sendRawPacket|broadcastRawPacket|getRawPacketPeerCount|TASK_165_NATIVE_MODULE_RAW_PACKET_BRIDGE" "\$MODULE" || true
 else
   echo "Module bridge file not found"
 fi
 
 echo ""
-echo "6. JS client"
+echo "5. JS client"
 grep -RniE "sendRawPacketToNode|broadcastRawPacketToPeers|getRawPacketPeerCount|TASK_165_RAW_PACKET_CLIENT" src 2>/dev/null || true
 
 echo ""
 echo "============================================================"
-echo "#165 audit complete"
+echo "#165 Audit complete"
 echo "============================================================"
 SH
 
 chmod +x "$SCRIPTS/audit-task-165-raw-packet-transport.sh"
 
 echo ""
-echo "9. Documentation"
+echo "8. Docs"
 
 cat > "$DOCS/task-165-meshcentral-raw-packet-transport.md" <<'MD'
 # Task #165 — MeshCentralClient Raw Packet Transport
@@ -806,58 +727,48 @@ Marker: `TASK_165_MESHCENTRAL_RAW_PACKET_TRANSPORT_20260608_A`
 - `MeshCentralClient.sendRawPacket(nodeId: String, bytes: ByteArray): Boolean`
 - `MeshCentralClient.broadcastRawPacket(bytes: ByteArray): Int`
 - `MeshCentralClient.getRawPacketPeerCount(): Int`
-- peer scan cache using BLE scan results
-- GATT write path using `WRITE_TYPE_NO_RESPONSE`
-- error/info logging through `MeshBleEventEmitter` where available, otherwise Android Log fallback
-- JS client:
-  - `sendRawPacketToNode(nodeId, bytes)`
-  - `broadcastRawPacketToPeers(bytes)`
-  - `getRawPacketPeerCount()`
+- peer scan cache from BLE scan callbacks
+- GATT write using `WRITE_TYPE_NO_RESPONSE`
+- JS raw packet client
 
 ## Truth boundary
 
-This submits raw bytes over BLE central GATT write.
+This installs the central-side BLE write path.
 
 It does not prove:
 - receiver GATT server exists
-- raw characteristic is available on the peer
-- packet is received by the peer
-- ACK is returned
-- relay succeeds
+- characteristic is available on the receiver
+- receiver accepted packet
+- ACK returned
+- relay succeeded
 
-Physical proof still requires two phones:
-1. Phone B advertises and serves raw packet GATT characteristic.
-2. Phone A scans and caches Phone B.
-3. Phone A calls `sendRawPacket`.
-4. Phone B receives the characteristic write.
-5. Phone B returns ACK.
+Physical completion requires two-phone proof after receiver GATT server exists.
 MD
 
 echo ""
-echo "10. Validate markers"
-
+echo "9. Validate markers"
 grep -RniE "TASK_165|sendRawPacket|broadcastRawPacket|MeshRawPacketUuids|rawPacketScanCache" \
   "$BLE_DIR" src docs scripts 2>/dev/null || true
 
 echo ""
-echo "11. TypeScript check"
+echo "10. TypeScript check"
 npx tsc --noEmit
 
 echo ""
-echo "12. Expo export check"
+echo "11. Expo export check"
 rm -rf dist .expo
 npx expo export --platform android --clear
 
 echo ""
-echo "13. Run audit"
+echo "12. Run audit"
 bash "$SCRIPTS/audit-task-165-raw-packet-transport.sh"
 
 echo ""
 echo "============================================================"
-echo "#165 ADAPTIVE RAW PACKET TRANSPORT INSTALLED"
+echo "#165 RAW PACKET TRANSPORT INSTALLED"
 echo "Backup: $BACKUP"
 echo ""
 echo "Next physical dependency:"
-echo "Phase 2 advertise proof + GATT server characteristic"
-echo "Then two-phone sendRawPacket proof"
+echo "- Receiver GATT server + raw packet characteristic"
+echo "- Two-phone sendRawPacket proof"
 echo "============================================================"
