@@ -14,3 +14,4 @@
 - [MauriMesh dependency vuln remediation](maurimesh-dependency-vulns.md) — fixes live as pnpm-workspace.yaml overrides; sandbox can't run pnpm install (OOM/500), lockfile regen happens on deploy. Beware pkill -f pnpm self-kill.
 - [MauriMesh message store / zustand gap](maurimesh-message-store-zustand.md) — useMeshStore needs zustand (not installed) → bundle breaks; use dependency-free useLiveMesh spine for live mesh UI.
 - [MauriMesh live screens pattern](maurimesh-live-screens.md) — mesh screens are self-contained (live-mesh-ops style) on useLiveMesh; backup app/mesh screens use stale rich components/DS tokens that no longer exist.
+- [MauriMesh live charts](maurimesh-live-charts.md) — RN app: charts built from animated Views (no Recharts/SVG); time-series via client-side useMeshHistory rolling window over cumulative spine snapshots.

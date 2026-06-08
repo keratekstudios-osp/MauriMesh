@@ -16,11 +16,27 @@ import {
   timeAgo,
   nodeDisplayName,
 } from "../../src/maurimesh/live/liveMeshFormat";
+import {
+  useMeshHistory,
+  bucketPercentiles,
+  FIVE_MIN_MS,
+} from "../../src/maurimesh/live/useMeshHistory";
+import { MultiLineChart } from "../../src/maurimesh/live/meshCharts";
+
+const LATENCY_BUCKET_MS = 15_000;
 
 export default function LatencyMonitoringScreen() {
   const router = useRouter();
   const { state } = useLiveMesh(3000);
   const m = state.metrics;
+
+  const history = useMeshHistory(m, state.updatedAt, FIVE_MIN_MS);
+  const { p50, p90, p99 } = bucketPercentiles(
+    history,
+    Date.now(),
+    FIVE_MIN_MS,
+    LATENCY_BUCKET_MS,
+  );
 
   const routes = state.nodes.map(deriveRouteHealth);
 
@@ -38,6 +54,21 @@ export default function LatencyMonitoringScreen() {
             { label: "Failures", value: m.failureCount, color: m.failureCount > 0 ? COLORS.red : COLORS.muted },
           ]}
         />
+      </Card>
+
+      <Card title="Latency Trend (last 5 min)">
+        {history.length < 2 ? (
+          <EmptyNote text="Collecting live latency samples… the P50/P90/P99 trend appears once at least two readings have arrived from the BLE bridge. Until a real round-trip is timed, the lines stay at 0 ms." />
+        ) : (
+          <MultiLineChart
+            unit="ms"
+            series={[
+              { label: "P50", color: COLORS.green, values: p50 },
+              { label: "P90", color: COLORS.amber, values: p90 },
+              { label: "P99", color: COLORS.red, values: p99 },
+            ]}
+          />
+        )}
       </Card>
 
       <Card title={`Peer Reachability (${routes.length})`}>

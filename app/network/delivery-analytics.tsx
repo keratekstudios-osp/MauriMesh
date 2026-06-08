@@ -10,11 +10,24 @@ import {
   EmptyNote,
   COLORS,
 } from "../../src/maurimesh/live/liveMeshUi";
+import {
+  useMeshHistory,
+  bucketDeltas,
+  FIVE_MIN_MS,
+} from "../../src/maurimesh/live/useMeshHistory";
+import { StackedAreaChart } from "../../src/maurimesh/live/meshCharts";
+
+const DELIVERY_BUCKET_MS = 30_000;
 
 export default function DeliveryAnalyticsScreen() {
   const router = useRouter();
   const { state } = useLiveMesh(5000);
   const m = state.metrics;
+
+  const history = useMeshHistory(m, state.updatedAt, FIVE_MIN_MS);
+  const now = Date.now();
+  const deliveredBuckets = bucketDeltas(history, now, FIVE_MIN_MS, DELIVERY_BUCKET_MS, "deliveryCount");
+  const droppedBuckets = bucketDeltas(history, now, FIVE_MIN_MS, DELIVERY_BUCKET_MS, "failureCount");
 
   const delivered = m.deliveryCount;
   const acked = m.ackCount;
@@ -37,6 +50,21 @@ export default function DeliveryAnalyticsScreen() {
             { label: "Success %", value: `${successRate}%`, color: successRate > 0 ? COLORS.green : COLORS.muted },
           ]}
         />
+      </Card>
+
+      <Card title="Delivered vs Dropped (30s buckets)">
+        {history.length < 2 ? (
+          <EmptyNote text="Collecting live delivery data… the delivered-vs-dropped trend fills in once two or more snapshots have arrived. Each bar is the real change in delivered and failed counts within a 30-second window." />
+        ) : (
+          <StackedAreaChart
+            lower={deliveredBuckets}
+            upper={droppedBuckets}
+            lowerColor={COLORS.green}
+            upperColor={COLORS.red}
+            lowerLabel="Delivered"
+            upperLabel="Dropped"
+          />
+        )}
       </Card>
 
       <Card title="Delivery Breakdown">

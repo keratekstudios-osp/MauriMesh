@@ -12,11 +12,22 @@ import {
   COLORS,
 } from "../../src/maurimesh/live/liveMeshUi";
 import { isFresh, nodeDisplayName, timeAgo } from "../../src/maurimesh/live/liveMeshFormat";
+import {
+  useMeshHistory,
+  bucketDeltas,
+  FIVE_MIN_MS,
+} from "../../src/maurimesh/live/useMeshHistory";
+import { BarChart } from "../../src/maurimesh/live/meshCharts";
+
+const RELAY_BUCKET_MS = 30_000;
 
 export default function RelayAnalyticsScreen() {
   const router = useRouter();
   const { state } = useLiveMesh(5000);
   const m = state.metrics;
+
+  const history = useMeshHistory(m, state.updatedAt, FIVE_MIN_MS);
+  const relayBuckets = bucketDeltas(history, Date.now(), FIVE_MIN_MS, RELAY_BUCKET_MS, "relayCount");
 
   const relayCapable = state.nodes.filter((n) => isFresh(n.lastSeenAt));
   const delivered = m.deliveryCount;
@@ -37,6 +48,14 @@ export default function RelayAnalyticsScreen() {
             { label: "Relay %", value: `${relayRate}%`, color: relayRate > 0 ? COLORS.green : COLORS.muted },
           ]}
         />
+      </Card>
+
+      <Card title="Relay Activity (30s buckets)">
+        {history.length < 2 ? (
+          <EmptyNote text="Collecting live relay data… the activity trend appears once two or more snapshots have arrived. Each bar is the real number of relay hops counted within a 30-second window." />
+        ) : (
+          <BarChart values={relayBuckets} color={COLORS.blue} label="Relay hops" />
+        )}
       </Card>
 
       <Card title="Relay Pipeline">
