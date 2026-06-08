@@ -12,3 +12,5 @@
 - [MauriMesh two engines](maurimesh-two-engines.md) — lib mauri-mesh-engine owns governance counters but UI screens render the separate invention-engine; lib engine not wired to UI by default.
 - [MauriMesh routing enhancement layers](maurimesh-routing-enhancements.md) — AI engine has self-healing (quarantine→rehab) + traffic-control (relay congestion) layers; any per-peer map must be GC'd against the live peer set or it leaks on churn.
 - [MauriMesh dependency vuln remediation](maurimesh-dependency-vulns.md) — fixes live as pnpm-workspace.yaml overrides; sandbox can't run pnpm install (OOM/500), lockfile regen happens on deploy. Beware pkill -f pnpm self-kill.
+- [MauriMesh message store / zustand gap](maurimesh-message-store-zustand.md) — useMeshStore needs zustand (not installed) → bundle breaks; use dependency-free useLiveMesh spine for live mesh UI.
+- [MauriMesh live screens pattern](maurimesh-live-screens.md) — mesh screens are self-contained (live-mesh-ops style) on useLiveMesh; backup app/mesh screens use stale rich components/DS tokens that no longer exist.

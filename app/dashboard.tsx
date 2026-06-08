@@ -14,6 +14,7 @@ const routes = [
   ["Settings", "/settings"],
   ["Chat", "/chat"],
   ["Living Mesh", "/living-mesh"],
+  ["Mesh Network", "/mesh"],
   ["Mesh Status", "/mesh-status"],
   ["Add Friend", "/add-friend"],
   ["Pixel Calling", "/pixel-calling"],
