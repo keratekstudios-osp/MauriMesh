@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { useLiveMesh } from "../src/maurimesh/live/useLiveMesh";
+import { PlatformLiveMeshPanel } from "../src/maurimesh/live/PlatformLiveMeshPanel";
 
 const MARKER = "LIVE_MESH_OPS_20260608_A";
 
@@ -76,6 +77,8 @@ export default function LiveMeshOpsScreen() {
         <Line label="Failures" value={state.metrics.failureCount} />
         <Line label="Truth level" value={state.metrics.truthLevel} />
       </Card>
+
+      <PlatformLiveMeshPanel title="Live BLE-Mesh Data (read-only spine)" />
 
       <TouchableOpacity
         style={[styles.button, state.scanActive && styles.stopButton]}

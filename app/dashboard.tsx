@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-const MARKER = "SAFE_DASHBOARD_LIVE_MESH_OPS_20260608_A";
+const MARKER = "SAFE_DASHBOARD_FOREGROUND_RUNTIME_20260608_A";
 
 const routes = [
   ["Settings", "/settings"],
@@ -24,6 +24,7 @@ const routes = [
   ["Native BLE Status", "/native-ble-status"],
   ["Native BLE Scan Proof", "/native-ble-scan-proof"],
   ["Live Mesh Ops", "/live-mesh-ops"],
+  ["Foreground Runtime Proof", "/foreground-runtime-proof"],
 ] as const;
 
 export default function Dashboard() {
