@@ -1,3 +1,4 @@
+import { makeProofPacketId, recordProofMetricEvent } from "../src/maurimesh/live/proofMetricsSpine";
 import React from "react";
 import {
   ActivityIndicator,
@@ -32,6 +33,23 @@ function buildEvidence() {
       "Client-submitted proof report. Not verified live BLE. Server storage does not prove BLE.",
     events: proofEvents,
   };
+}
+
+const TASK_190_BLE_PROOF_LEDGER_METRICS_WIRE = "TASK_190_BLE_PROOF_LEDGER_METRICS_WIRE_20260608_A";
+const TASK_189B_BLE_PROOF_SAVE_TO_LEDGER = "TASK_189B_BLE_PROOF_SAVE_TO_LEDGER_20260608_A";
+
+
+async function recordLedgerSaveProofMetric(ok: boolean, raw?: unknown) {
+  const packetId = makeProofPacketId("MM-LEDGER");
+  await recordProofMetricEvent({
+    type: ok ? "ack_received" : "delivery_failed",
+    packetId,
+    fromNode: "proof-ledger",
+    toNode: "local-device",
+    transport: "BLE",
+    reason: ok ? undefined : "ledger save failed",
+    raw,
+  });
 }
 
 export default function BleProofScreen() {

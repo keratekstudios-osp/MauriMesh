@@ -1,4 +1,5 @@
 package com.maurimesh.messenger
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.facebook.react.bridge.WritableMap
 import android.util.Base64
 
@@ -262,13 +263,33 @@ class MauriMeshBleModule(
         rawPacketGattServer = MeshRawPacketGattServer(reactContext) { event ->
           centralClient.cachePeerAddress(event.fromAddress, "ack-peer", null)
 
-          val ackText =
+          val rxPacketId = extractPacketIdFromBytes(event.bytes)
+          emitRawPacketProofEvent(
+            "rx_packet",
+            rxPacketId,
+            event.fromAddress,
+            event.bytes.size,
+            true,
+            "RX_RAW_PACKET"
+          )
+
+          val rxPacketId = extractPacketIdFromBytes(event.bytes)
+                    val ackText =
             "MAURIMESH_ACK|from=${event.fromAddress}|bytes=${event.bytes.size}|at=${event.receivedAtMs}"
           val ackBytes = ackText.toByteArray(Charsets.UTF_8)
 
           val ackSent = centralClient.sendRawPacket(event.fromAddress, ackBytes)
 
-          if (ackSent) {
+          emitRawPacketProofEvent(
+            "ack_sent",
+            rxPacketId,
+            event.fromAddress,
+            ackBytes.size,
+            ackSent,
+            if (ackSent) "ACK_SENT=true" else "ACK_SENT=false"
+          )
+
+                    if (ackSent) {
             rawPacketAckCount += 1
             rawPacketLastAckTarget = event.fromAddress
             rawPacketLastAckSentAtMs = System.currentTimeMillis()
@@ -338,6 +359,57 @@ class MauriMeshBleModule(
     map.putInt("peerCount", centralClient.getRawPacketPeerCount())
 
     return map
+  }
+
+
+
+
+  // TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A
+  private fun emitRawPacketProofEvent(
+    eventType: String,
+    packetId: String,
+    peerAddress: String,
+    payloadBytes: Int,
+    ok: Boolean,
+    detail: String?
+  ) {
+    try {
+      val map = Arguments.createMap()
+      map.putString("marker", "TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A")
+      map.putString("type", eventType)
+      map.putString("packetId", packetId)
+      map.putString("peerAddress", peerAddress)
+      map.putInt("payloadBytes", payloadBytes)
+      map.putBoolean("ok", ok)
+      map.putDouble("at", System.currentTimeMillis().toDouble())
+      map.putString("transport", "BLE")
+      map.putString("detail", detail)
+
+      reactContext
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit("MauriMeshRawPacketProofEvent", map)
+
+      android.util.Log.i(
+        "MauriMeshBle",
+        "[TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A] event=$eventType packetId=$packetId peer=$peerAddress ok=$ok bytes=$payloadBytes"
+      )
+    } catch (error: Throwable) {
+      android.util.Log.e(
+        "MauriMeshBle",
+        "[TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A] emit failed: ${error.message ?: error.toString()}"
+      )
+    }
+  }
+
+  private fun extractPacketIdFromBytes(bytes: ByteArray): String {
+    return try {
+      val text = bytes.toString(Charsets.UTF_8)
+      val first = text.split("|").firstOrNull()?.trim()
+      if (!first.isNullOrBlank() && first.length <= 128) first
+      else "MM-RX-${System.currentTimeMillis()}"
+    } catch (_: Throwable) {
+      "MM-RX-${System.currentTimeMillis()}"
+    }
   }
 
 

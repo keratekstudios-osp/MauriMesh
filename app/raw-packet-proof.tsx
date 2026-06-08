@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { makeProofPacketId, recordProofMetricEvent } from "../src/maurimesh/live/proofMetricsSpine";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   getRawPacketReceiverStatus,
@@ -10,8 +11,14 @@ import {
 } from "../src/maurimesh/ble/rawPacketProofClient";
 
 const MARKER = "TASK_165B_RAW_PACKET_PROOF_SCREEN_20260608_A";
+const TASK_190_RAW_PACKET_PROOF_METRICS_WIRE = "TASK_190_RAW_PACKET_PROOF_METRICS_WIRE_20260608_A";
 
 export default function RawPacketProofScreen() {
+  useEffect(() => {
+    const nativeProofBridgeStatus = startNativeProofEventBridge();
+    console.log("[TASK_192_NATIVE_PROOF_EVENT_BRIDGE]", nativeProofBridgeStatus);
+  }, []);
+
   const [target, setTarget] = useState("");
   const [status, setStatus] = useState<RawPacketReceiverStatus | null>(null);
   const [log, setLog] = useState<string[]>([]);
@@ -64,9 +71,25 @@ export default function RawPacketProofScreen() {
         style={styles.button}
         onPress={() =>
           run("sendRawPacketUtf8", async () => {
-            const payload = makeProofPayload("PHONE_TO_PHONE");
+            const packetId = makeProofPacketId("MM-RAW");
+            const payload = `${packetId}|${makeProofPayload("PHONE_TO_PHONE")}`;
+            await recordProofMetricEvent({
+              type: "send_attempt",
+              packetId,
+              toNode: target.trim(),
+              transport: "BLE",
+              payloadBytes: payload.length,
+            });
             const ok = await sendRawPacketUtf8(target.trim(), payload);
-            return { ok, target: target.trim(), payload };
+            await recordProofMetricEvent({
+              type: ok ? "send_submitted" : "delivery_failed",
+              packetId,
+              toNode: target.trim(),
+              transport: "BLE",
+              payloadBytes: payload.length,
+              reason: ok ? undefined : "sendRawPacketUtf8 returned false",
+            });
+            return { ok, target: target.trim(), packetId, payload };
           })
         }
       >

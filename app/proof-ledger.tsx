@@ -29,6 +29,8 @@ function prettyEvidence(raw: string | null): string {
   }
 }
 
+const TASK_189B_PROOF_LEDGER_HARDWARE_VIEW = "TASK_189B_PROOF_LEDGER_HARDWARE_VIEW_20260608_A";
+
 export default function ProofLedgerScreen() {
   const [entries, setEntries] = React.useState<LedgerEntry[]>([]);
   const [status, setStatus] = React.useState<"loading" | "ready" | "unavailable">(
