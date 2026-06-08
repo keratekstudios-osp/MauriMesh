@@ -7,6 +7,7 @@
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
 - [MauriMesh BLE UUID map & stale task paths](maurimesh-ble-uuid-map.md) — native Kotlin (7c9a) vs JS transport (7f9a) diverge; Rust defines no UUIDs; some task specs cite a non-existent artifacts/* native tree.
+- [MauriMesh native-BLE task triage](maurimesh-native-ble-tasks.md) — standing user decision: auto-close native-Android-only stale BLE tasks (no changes, no re-ask); still implement any genuine server/JS portions.
 - [MauriMesh packet trust model](maurimesh-packet-trust.md) — verify-before-trust: sig required (except ROUTE_BEACON), TOFU key-binding seeded only from verified packets, resolve nodeId post-auth only, gate on async hydration, fail-closed egress.
 - [MauriMesh governance source](maurimesh-governance-source.md) — governance counters come from ONE server-side engine behind /api/mesh/status; clients prefer API governance, local sim is fallback only.
 - [MauriMesh routing presets](maurimesh-routing-presets.md) — user-tunable routing sensitivity (stable/balanced/aggressive); balanced={} = defaults; setConfig replaces+rebuilds; pure presets split from AsyncStorage for node tests.
