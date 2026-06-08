@@ -21,7 +21,7 @@ const TIER_COLOR: Record<string, string> = {
 
 export default function RouteHealthScreen() {
   const router = useRouter();
-  const { state } = useLiveMesh(2000);
+  const { state } = useLiveMesh(3000);
 
   const routes = state.nodes.map(deriveRouteHealth);
   const healthy = routes.filter((r) => r.tier === "Healthy").length;

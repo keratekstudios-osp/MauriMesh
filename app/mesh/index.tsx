@@ -12,6 +12,10 @@ const SECTIONS: { title: string; subtitle: string; route: string }[] = [
   { title: "Route Health", subtitle: "Per-peer route quality", route: "/network/route-health" },
   { title: "Store-Forward Queue", subtitle: "Offline message relay", route: "/mesh/store-forward-queue" },
   { title: "ACK Tracking", subtitle: "Message acknowledgement paths", route: "/mesh/ack-tracking" },
+  { title: "Relay Analytics", subtitle: "Multi-hop relay performance", route: "/mesh/relay-analytics" },
+  { title: "Latency Monitoring", subtitle: "Round-trip timing & reachability", route: "/network/latency-monitoring" },
+  { title: "Packet Analysis", subtitle: "Live BLE scan packet activity", route: "/mesh/packet-analysis" },
+  { title: "Delivery Analytics", subtitle: "End-to-end delivery outcomes", route: "/network/delivery-analytics" },
 ];
 
 export default function MeshIndexScreen() {

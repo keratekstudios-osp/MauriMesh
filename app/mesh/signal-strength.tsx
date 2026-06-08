@@ -16,7 +16,7 @@ import {
 
 export default function SignalStrengthScreen() {
   const router = useRouter();
-  const { state } = useLiveMesh(2000);
+  const { state } = useLiveMesh(1000);
 
   return (
     <LiveScreen

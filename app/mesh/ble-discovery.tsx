@@ -19,7 +19,7 @@ import {
 
 export default function BleDiscoveryScreen() {
   const router = useRouter();
-  const { state, loading, startScan, stopScan, refresh } = useLiveMesh(2000);
+  const { state, loading, startScan, stopScan, refresh } = useLiveMesh(1000);
 
   return (
     <LiveScreen

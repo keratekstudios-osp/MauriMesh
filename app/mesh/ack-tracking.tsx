@@ -13,7 +13,7 @@ import {
 
 export default function AckTrackingScreen() {
   const router = useRouter();
-  const { state } = useLiveMesh(2000);
+  const { state } = useLiveMesh(5000);
   const m = state.metrics;
 
   const acked = m.ackCount;
