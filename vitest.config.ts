@@ -25,6 +25,9 @@ export default defineConfig({
     alias: {
       tweetnacl: resolveDep("tweetnacl"),
       "tweetnacl-util": resolveDep("tweetnacl-util"),
+      // proof route tests import the router (which imports drizzle-orm); resolve
+      // it from pnpm's virtual store the same way as tweetnacl.
+      "drizzle-orm": resolveDep("drizzle-orm"),
     },
   },
   test: {
