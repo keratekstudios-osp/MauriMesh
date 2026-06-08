@@ -1,7 +1,6 @@
 import {
   acceptNativeAttestation,
   getRuntimeTruthState,
-  markRealNative,
 } from "../runtime/RuntimeTruthEngine";
 
 export const TASK_223_RUNTIME_VERIFY_ROUTE_MARKER =
@@ -65,19 +64,9 @@ export function registerRuntimeVerifyRoute(app: any) {
     }
   });
 
-  app.post("/api/runtime/mark-real-native", async (req: any, res: any) => {
-    const body = req.body || {};
-    const features = Array.isArray(body.features)
-      ? body.features.map((feature: unknown) => String(feature))
-      : ["native_bridge"];
-
-    const truth = markRealNative(features, body.attestation);
-
-    res.json({
-      ok: true,
-      marker: TASK_223_RUNTIME_VERIFY_ROUTE_MARKER,
-      proofCapable: truth.proofCapable,
-      truth,
-    });
-  });
+  // NOTE: the unauthenticated POST /api/runtime/mark-real-native endpoint was
+  // removed. It allowed any client to promote proof scope to "real_native"
+  // without a validated native attestation. Proof-scope promotion now flows
+  // exclusively through POST /api/runtime/verify, which validates the
+  // attestation via hasRealNativeMinimum() before calling acceptNativeAttestation().
 }

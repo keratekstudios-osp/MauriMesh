@@ -59,15 +59,17 @@ function hasRealNativeMinimum(attestation: NativeRuntimeAttestation): boolean {
 
 export class RuntimeTruthEngine {
   verify(feature: RuntimeTruthFeature): RuntimeTruthState {
+    // Recording a feature must never, on its own, promote proof scope.
+    // Only a validated native attestation (markRealNative / acceptNativeAttestation)
+    // may set mode = "real_native".
     verifiedFeatures.add(feature);
-    if (verifiedFeatures.has("native_bridge")) {
-      mode = "real_native";
-    }
     return this.getState();
   }
 
   markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation): RuntimeTruthState {
-    if (attestation && !hasRealNativeMinimum(attestation)) {
+    // Proof scope can only be promoted with a valid native attestation.
+    // An absent attestation must NEVER promote (closes self-promotion bypass).
+    if (!attestation || !hasRealNativeMinimum(attestation)) {
       return this.getState();
     }
 
@@ -124,6 +126,10 @@ export const runtimeTruthEngine = new RuntimeTruthEngine();
 
 export function markRealNative(features: RuntimeTruthFeature[], attestation?: NativeRuntimeAttestation) {
   return runtimeTruthEngine.markRealNative(features, attestation);
+}
+
+export function acceptNativeAttestation(attestation: NativeRuntimeAttestation) {
+  return runtimeTruthEngine.acceptNativeAttestation(attestation);
 }
 
 export function isProofCapable() {
