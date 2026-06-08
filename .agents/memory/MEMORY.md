@@ -5,7 +5,7 @@
 - [MauriMesh screen wiring pattern](maurimesh-screen-wiring.md) — apiGet/apiPost returns ApiResult<T>; check res.ok, data at res.data.*; error at res.error.
 - [MauriMesh DB schema complete](maurimesh-db-schema.md) — trustRecords, storeForwardQueue, proofLedger, runtimeErrors all exist in lib/db/src/schema/mesh.ts.
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
-- [Auto-commit sweeps untracked files](auto-commit-sweeps-untracked.md) — end-of-task commit stages whole tree; other tasks' install-script output (e.g. #223 runtime-verify) leaks into your commit + review.
+- [Auto-commit sweeps untracked files](auto-commit-sweeps-untracked.md) — end-of-task commit stages whole tree; other efforts' generated/install-script output leaks into your commit + review.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
 - [MauriMesh BLE UUID map & stale task paths](maurimesh-ble-uuid-map.md) — native Kotlin (7c9a) vs JS transport (7f9a) diverge; Rust defines no UUIDs; some task specs cite a non-existent artifacts/* native tree.
 - [MauriMesh native-BLE task triage](maurimesh-native-ble-tasks.md) — standing user decision: auto-close native-Android-only stale BLE tasks (no changes, no re-ask); still implement any genuine server/JS portions.
