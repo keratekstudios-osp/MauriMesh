@@ -1,22 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo ""
-echo "============================================================"
-echo "ROUTE SAFETY RESTART PROOF — FIXED INSTALLER"
-echo "Proves blacklist survives restart"
-echo "Proves seen-packet cache remains memory-only"
-echo "============================================================"
-echo ""
-
-ROOT="$(pwd)"
-DOCS="$ROOT/docs"
-SCRIPTS="$ROOT/scripts"
-TESTS="$ROOT/scripts/route-safety-proof"
-
-mkdir -p "$DOCS" "$SCRIPTS" "$TESTS"
-
-cat > "$TESTS/route-safety-restart-proof.ts" <<'TS'
 import { RouteSafetyEngine } from "../../artifacts/api-server/src/runtime/RouteSafetyEngine";
 
 const PROOF_MARKER = "ROUTE_SAFETY_RESTART_PROOF_20260608_A";
@@ -142,39 +123,3 @@ main().catch((error) => {
   console.error("============================================================");
   process.exit(1);
 });
-TS
-
-cat > "$SCRIPTS/run-route-safety-restart-proof.sh" <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "============================================================"
-echo "RUN ROUTE SAFETY RESTART PROOF"
-echo "============================================================"
-
-if command -v tsx >/dev/null 2>&1; then
-  tsx scripts/route-safety-proof/route-safety-restart-proof.ts
-else
-  npx tsx scripts/route-safety-proof/route-safety-restart-proof.ts
-fi
-SH
-
-chmod +x "$SCRIPTS/run-route-safety-restart-proof.sh"
-
-cat > "$DOCS/route-safety-restart-proof-20260608.md" <<'DOC'
-# Route Safety Restart Proof
-
-Marker: `ROUTE_SAFETY_RESTART_PROOF_20260608_A`
-
-## Proves
-
-- Route blacklist persists after restart.
-- Blacklisted route remains blocked after new engine instance loads persistence.
-- Seen-packet duplicate cache is memory-only.
-- Duplicate packet detection works inside one process.
-- Same packet is accepted after restart because seen-cache is not persisted.
-
-## Command
-
-```bash
-bash scripts/run-route-safety-restart-proof.sh
