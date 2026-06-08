@@ -7,6 +7,7 @@
 - [MauriMesh JNI bridge pattern](maurimesh-jni-bridge.md) — Rust owns logic; Kotlin owns BLE radio; JNI is the delegation boundary. Key wiring rules inside.
 - [Auto-commit sweeps untracked files](auto-commit-sweeps-untracked.md) — end-of-task commit stages whole tree; other efforts' generated/install-script output leaks into your commit + review.
 - [MauriMesh integrity badge contract](maurimesh-integrity-badge.md) — chat badge shows 3 states: "SHA-256 OK · not encryption", "FAIL · not encryption", "PENDING · not encryption"; missingHash rejections log to both runtimeErrors and meshEvents.
+- [MauriMesh server test pattern](maurimesh-server-test-pattern.md) — vitest can't import drizzle/db modules (pnpm); extract pure route logic to a DB-free file and unit-test that.
 - [MauriMesh BLE UUID map & stale task paths](maurimesh-ble-uuid-map.md) — native Kotlin (7c9a) vs JS transport (7f9a) diverge; Rust defines no UUIDs; some task specs cite a non-existent artifacts/* native tree.
 - [MauriMesh native-BLE task triage](maurimesh-native-ble-tasks.md) — standing user decision: auto-close native-Android-only stale BLE tasks (no changes, no re-ask); still implement any genuine server/JS portions.
 - [MauriMesh packet trust model](maurimesh-packet-trust.md) — verify-before-trust: sig required (except ROUTE_BEACON), TOFU key-binding seeded only from verified packets, resolve nodeId post-auth only, gate on async hydration, fail-closed egress.

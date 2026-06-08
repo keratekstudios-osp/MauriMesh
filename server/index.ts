@@ -2,6 +2,7 @@ import express from "express";
 import { createMeshGovernanceSim } from "../src/lib/meshGovernanceSim";
 import { createGovernanceHistory } from "../src/lib/governanceHistory";
 import { createEnterpriseRouter } from "./enterpriseRoutes";
+import { createProofRouter } from "./proofRoutes";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -77,12 +78,18 @@ setInterval(
 // these endpoints persist real records across sessions.
 app.use("/api/enterprise", createEnterpriseRouter());
 
+// Proof evidence persistence. POST /api/proof/evidence permanently records a
+// two-phone hardware proof report in the ProofLedger; GET /api/proof/evidence
+// (optionally ?type=) makes it queryable from the dashboard. The server stores
+// client-submitted evidence only and does not itself prove live BLE.
+app.use("/api/proof", createProofRouter());
+
 app.get("/", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "maurimesh-replit-api",
     truth: "[SIMULATION - NOT LIVE BLE] Replit API is development/simulation only. It does not prove live BLE.",
-    endpoints: ["/api/health", "/api/mesh/status"],
+    endpoints: ["/api/health", "/api/mesh/status", "/api/proof/evidence"],
   });
 });
 
