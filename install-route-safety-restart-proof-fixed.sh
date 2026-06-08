@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo ""
 echo "============================================================"
-echo "ROUTE SAFETY RESTART PROOF INSTALLER"
+echo "ROUTE SAFETY RESTART PROOF — FIXED INSTALLER"
 echo "Proves blacklist survives restart"
 echo "Proves seen-packet cache remains memory-only"
 echo "============================================================"
@@ -53,7 +53,7 @@ async function main() {
   }
 
   console.log("");
-  console.log("2. Simulate API restart with a new RouteSafetyEngine instance");
+  console.log("2. Simulate restart with a new RouteSafetyEngine instance");
 
   const engineB = new RouteSafetyEngine({
     failureThreshold: 3,
@@ -71,18 +71,20 @@ async function main() {
   }
 
   console.log("");
-  console.log("3. Prove seen-packet duplicate cache is memory-only");
+  console.log("3. Prove seen-packet cache is memory-only");
+
+  const routeKeyForSeenCache = `seen-cache-proof-${Date.now()}`;
 
   const firstPacketDecision = await engineB.checkPacket({
     packetId,
-    routeKey: `seen-cache-proof-${Date.now()}`,
+    routeKey: routeKeyForSeenCache,
     ttl: 8,
     raw: { ok: true },
   });
 
   const duplicateDecisionSameProcess = await engineB.checkPacket({
     packetId,
-    routeKey: `seen-cache-proof-${Date.now()}`,
+    routeKey: routeKeyForSeenCache,
     ttl: 8,
     raw: { ok: true },
   });
@@ -94,7 +96,10 @@ async function main() {
     throw new Error("FAIL: first packet should be accepted");
   }
 
-  if (duplicateDecisionSameProcess.ok !== false || duplicateDecisionSameProcess.reason !== "duplicate") {
+  if (
+    duplicateDecisionSameProcess.ok !== false ||
+    duplicateDecisionSameProcess.reason !== "duplicate"
+  ) {
     throw new Error("FAIL: duplicate was not detected inside same process");
   }
 
@@ -108,7 +113,7 @@ async function main() {
 
   const duplicateDecisionAfterRestart = await engineC.checkPacket({
     packetId,
-    routeKey: `seen-cache-proof-${Date.now()}`,
+    routeKey: `seen-cache-proof-after-restart-${Date.now()}`,
     ttl: 8,
     raw: { ok: true },
   });
@@ -156,20 +161,21 @@ SH
 
 chmod +x "$SCRIPTS/run-route-safety-restart-proof.sh"
 
-cat > "$DOCS/route-safety-restart-proof-20260608.md" <<'MD'
+cat > "$DOCS/route-safety-restart-proof-20260608.md" <<'DOC'
 # Route Safety Restart Proof
 
 Marker: `ROUTE_SAFETY_RESTART_PROOF_20260608_A`
 
 ## Proves
 
-- route blacklist persists after restart
-- blacklisted route remains blocked after new engine instance loads persistence
-- seen-packet duplicate cache is memory-only
-- duplicate packet detection works inside one process
-- same packet is accepted after restart because seen-cache is not persisted
+- Route blacklist persists after restart.
+- Blacklisted route remains blocked after new engine instance loads persistence.
+- Seen-packet duplicate cache is memory-only.
+- Duplicate packet detection works inside one process.
+- Same packet is accepted after restart because seen-cache is not persisted.
 
 ## Command
 
 ```bash
 bash scripts/run-route-safety-restart-proof.sh
+

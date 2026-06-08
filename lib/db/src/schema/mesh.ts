@@ -1,4 +1,8 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text as sqliteText,
+  integer as sqliteInteger,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { pgTable, text, integer, timestamp, varchar, real, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -154,11 +158,11 @@ export type ApiActivityEvent = typeof apiActivityEvents.$inferSelect;
 
 
 export const routeSafetyBlacklist = sqliteTable("route_safety_blacklist", {
-  id: text("id").primaryKey(),
-  routeKey: text("route_key").notNull(),
-  reason: text("reason").notNull(),
-  failureCount: integer("failure_count").notNull().default(1),
-  blacklistedAt: integer("blacklisted_at", { mode: "timestamp" }).notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-  source: text("source").notNull().default("ROUTE_SAFETY_PERSISTENCE_SERVER_20260608_A"),
+  id: sqliteText("id").primaryKey(),
+  routeKey: sqliteText("route_key").notNull(),
+  reason: sqliteText("reason").notNull(),
+  failureCount: sqliteInteger("failure_count").notNull().default(1),
+  blacklistedAt: sqliteInteger("blacklisted_at", { mode: "timestamp" }).notNull(),
+  expiresAt: sqliteInteger("expires_at", { mode: "timestamp" }).notNull(),
+  source: sqliteText("source").notNull().default("ROUTE_SAFETY_PERSISTENCE_SERVER_20260608_A"),
 });
