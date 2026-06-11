@@ -126,6 +126,12 @@ export default function DashboardScreen() {
         </Text>
         <Text style={styles.hiddenMarkers}>/login /dashboard</Text>
       </MauriPanel>
+          <MauriButton title="BLE 2-Hop Proof" onPress={() => router.push("/ble-2-hop-proof")} />
+    
+      <MauriButton title="BLE 3-Device Proof" onPress={() => router.push("/ble-3-device-proof")} />
+      <MauriButton title="Next Proof Exam" onPress={() => router.push("/next-proof-exam")} />
+          <MauriButton title="Store-Forward Proof" onPress={() => router.push("/store-forward-proof")} />
+          <MauriButton title="Full Button Audit" onPress={() => router.push("/button-audit")} />
     </AppShell>
   );
 }
