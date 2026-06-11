@@ -9,18 +9,27 @@
         "buildType": "apk"
       },
       "distribution": "internal",
-      "developmentClient": false
+      "developmentClient": false,
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "preview": {
       "android": {
         "buildType": "apk"
       },
       "distribution": "internal",
-      "developmentClient": false
+      "developmentClient": false,
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     }
   }

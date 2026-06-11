@@ -1,27 +1,83 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-
-const MARKER = "SAFE_ADD_FRIEND_20260607_A";
+import { StyleSheet, Text, View } from "react-native";
+import { AppShell } from "../src/components/AppShell";
+import { MauriButton } from "../src/components/MauriButton";
+import { StatusPill } from "../src/components/StatusPill";
+import { mauriTheme } from "../src/theme/mauriTheme";
 
 export default function AddFriendScreen() {
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.brand}>MauriMesh</Text>
+    <AppShell>
+      <StatusPill label="QR + NETWORK SEARCH SHELL" tone="info" />
+
       <Text style={styles.title}>Add Friend</Text>
-      <Text style={styles.marker}>{MARKER}</Text>
-      <View style={styles.qr}><Text style={styles.qrText}>QR SHELL</Text></View>
-      <Text style={styles.note}>Camera and BLE nearby discovery are isolated until native proof restore.</Text>
-    </ScrollView>
+
+      <Text style={styles.subtitle}>
+        Replit can finish the UI shell. Camera QR scanning and nearby BLE discovery require APK/device validation.
+      </Text>
+
+      <View style={styles.truthBox}>
+        <Text style={styles.truthTitle}>Camera QR / APK required</Text>
+        <Text style={styles.truthText}>
+          Camera QR scanning and nearby BLE discovery require APK/device validation. Replit shows the UI shell only.
+        </Text>
+      </View>
+
+      <View style={styles.qrBox}>
+        <Text style={styles.qrText}>MAURIMESH QR</Text>
+        <Text style={styles.qrSub}>UI SHELL ONLY</Text>
+      </View>
+
+      <MauriButton title="Scan QR Code" onPress={() => {}} />
+      <MauriButton title="Search Nearby Mesh" variant="secondary" onPress={() => {}} />
+    </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#020617" },
-  content: { padding: 24, paddingTop: 72 },
-  brand: { color: "#00D084", fontSize: 38, fontWeight: "900", marginBottom: 8 },
-  title: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", marginBottom: 8 },
-  marker: { color: "#38BDF8", fontSize: 12, fontWeight: "800", marginBottom: 20 },
-  qr: { height: 260, borderRadius: 24, borderWidth: 1, borderColor: "rgba(0,208,132,0.28)", backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" },
-  qrText: { color: "#00D084", fontSize: 22, fontWeight: "900", letterSpacing: 2 },
-  note: { color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 22, marginTop: 18 },
+  title: {
+    color: mauriTheme.colors.white,
+    fontSize: 34,
+    fontWeight: "900",
+  },
+  subtitle: {
+    color: mauriTheme.colors.mutedWhite,
+    lineHeight: 22,
+  },
+  truthBox: {
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.45)",
+    backgroundColor: "rgba(56,189,248,0.10)",
+    borderRadius: mauriTheme.radius.lg,
+    padding: mauriTheme.spacing.md,
+    gap: 6,
+  },
+  truthTitle: {
+    color: mauriTheme.colors.blueWeb,
+    fontWeight: "900",
+  },
+  truthText: {
+    color: mauriTheme.colors.mutedWhite,
+    lineHeight: 20,
+  },
+  qrBox: {
+    height: 260,
+    borderRadius: mauriTheme.radius.xl,
+    borderWidth: 1,
+    borderColor: mauriTheme.colors.panelBorder,
+    backgroundColor: mauriTheme.colors.panel,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  qrText: {
+    color: mauriTheme.colors.greenstone,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
+  qrSub: {
+    color: mauriTheme.colors.mutedWhite,
+    fontSize: 12,
+    fontWeight: "800",
+  },
 });

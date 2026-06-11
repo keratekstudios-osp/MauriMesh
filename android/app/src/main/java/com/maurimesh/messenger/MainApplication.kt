@@ -1,5 +1,6 @@
 package com.maurimesh.messenger
 
+import com.maurimesh.messenger.maurimesh.telemetry.MauriMeshHardwareTelemetryPackage
 import android.app.Application
 import android.content.res.Configuration
 
@@ -15,6 +16,7 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
+import com.maurimesh.messenger.maurimesh.blehardware.MauriMeshHardwareBlePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -22,9 +24,10 @@ class MainApplication : Application(), ReactApplication {
       this,
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
-            PackageList(this).packages.apply { add(MauriMeshBackgroundRuntimePackage()) }.apply {
-        add(MauriMeshBlePackage())
-      }.apply {
+            PackageList(this).packages.apply {
+          add(MauriMeshHardwareBlePackage())
+                add(MauriMeshHardwareTelemetryPackage())
+                            }.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
             }

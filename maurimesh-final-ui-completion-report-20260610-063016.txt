@@ -1,0 +1,270 @@
+
+------------------------------------------------------------
+1. PROJECT ROOT CHECKS
+------------------------------------------------------------
+PASS: package.json found
+PASS: Expo Router app/ folder found
+PASS: src/ folder found
+
+------------------------------------------------------------
+2. REQUIRED DIRECTORIES
+------------------------------------------------------------
+PASS: Routes directory exists: app
+PASS: Source directory exists: src
+PASS: Components directory exists: src/components
+PASS: Library directory exists: src/lib
+PASS: Theme directory exists: src/theme
+PASS: Server directory exists
+
+------------------------------------------------------------
+3. REQUIRED UI ROUTE FILES
+------------------------------------------------------------
+PASS: Root layout exists: app/_layout.tsx
+PASS: Index redirect exists: app/index.tsx
+FAIL: Login screen missing: app/login.tsx
+PASS: Dashboard screen exists: app/dashboard.tsx
+PASS: Chat screen exists: app/chat.tsx
+PASS: Settings screen exists: app/settings.tsx
+PASS: Add Friend screen exists: app/add-friend.tsx
+PASS: Living Mesh screen exists: app/living-mesh.tsx
+PASS: Mesh Status screen exists: app/mesh-status.tsx
+PASS: Pixel Calling screen exists: app/pixel-calling.tsx
+
+------------------------------------------------------------
+4. REQUIRED COMPONENT FILES
+------------------------------------------------------------
+PASS: App shell component exists: src/components/AppShell.tsx
+PASS: Mauri button component exists: src/components/MauriButton.tsx
+PASS: Status pill component exists: src/components/StatusPill.tsx
+PASS: Mesh signal card component exists: src/components/MeshSignalCard.tsx
+PASS: Living mesh canvas component exists: src/components/LivingMeshCanvas.tsx
+PASS: Chat bubble component exists: src/components/ChatBubble.tsx
+
+------------------------------------------------------------
+5. REQUIRED LIBRARY AND THEME FILES
+------------------------------------------------------------
+PASS: Mauri theme exists: src/theme/mauriTheme.ts
+PASS: API client exists: src/lib/api.ts
+PASS: Mesh client exists: src/lib/meshClient.ts
+PASS: Simulation data exists: src/lib/simulation.ts
+PASS: Replit API server exists: server/index.ts
+PASS: .env.example exists
+
+------------------------------------------------------------
+6. ROUTE FILE CONTENT CHECKS
+------------------------------------------------------------
+PASS: Root layout is not empty: app/_layout.tsx
+PASS: Index route is not empty: app/index.tsx
+FAIL: Login screen is empty or missing: app/login.tsx
+PASS: Dashboard screen is not empty: app/dashboard.tsx
+PASS: Chat screen is not empty: app/chat.tsx
+PASS: Settings screen is not empty: app/settings.tsx
+PASS: Add Friend screen is not empty: app/add-friend.tsx
+PASS: Living Mesh screen is not empty: app/living-mesh.tsx
+PASS: Mesh Status screen is not empty: app/mesh-status.tsx
+PASS: Pixel Calling screen is not empty: app/pixel-calling.tsx
+
+------------------------------------------------------------
+7. EXPO ROUTER CHECKS
+------------------------------------------------------------
+PASS: Expo Router Stack marker found in app/_layout.tsx
+FAIL: Index redirect marker missing in app/index.tsx
+FAIL: Login navigation marker missing in app/login.tsx
+FAIL: Login to dashboard route marker missing in app/login.tsx
+FAIL: Settings logout route marker missing in app/settings.tsx
+
+------------------------------------------------------------
+8. DASHBOARD FINAL NAVIGATION CHECKS
+------------------------------------------------------------
+PASS: Dashboard links to /chat
+PASS: Dashboard links to /living-mesh
+PASS: Dashboard links to /add-friend
+PASS: Dashboard links to /pixel-calling
+PASS: Dashboard links to /mesh-status
+PASS: Dashboard links to /settings
+PASS: Dashboard uses Expo Router navigation
+
+------------------------------------------------------------
+9. SCREEN IDENTITY MARKER CHECKS
+------------------------------------------------------------
+FAIL: Login brand marker missing in app/login.tsx
+FAIL: Login button marker missing in app/login.tsx
+PASS: Dashboard title marker found in app/dashboard.tsx
+PASS: Chat title marker found in app/chat.tsx
+PASS: Settings title marker found in app/settings.tsx
+PASS: Add Friend title marker found in app/add-friend.tsx
+PASS: Living Mesh title marker found in app/living-mesh.tsx
+PASS: Mesh Status title marker found in app/mesh-status.tsx
+PASS: Pixel Calling title marker found in app/pixel-calling.tsx
+
+------------------------------------------------------------
+10. TRUTHFUL SIMULATION / NO FAKE LIVE CLAIM CHECKS
+------------------------------------------------------------
+WARN: Chat does not clearly label simulation/dev state
+WARN: Living Mesh does not clearly label simulation/fallback state
+PASS: Pixel Calling is clearly labelled as UI shell / not real transport
+PASS: meshClient includes SIMULATION fallback
+PASS: meshClient checks API before fallback
+
+------------------------------------------------------------
+11. API FALLBACK CHECKS
+------------------------------------------------------------
+PASS: Expo public API URL support marker found in src/lib/api.ts
+PASS: API timeout support marker found in src/lib/api.ts
+PASS: Unavailable state marker found in src/lib/api.ts
+PASS: Health endpoint marker found in server/index.ts
+PASS: Mesh status endpoint marker found in server/index.ts
+PASS: Server labels API as simulation/development
+
+------------------------------------------------------------
+12. COMPONENT EXPORT / STRUCTURE CHECKS
+------------------------------------------------------------
+PASS: AppShell export marker found in src/components/AppShell.tsx
+PASS: MauriButton export marker found in src/components/MauriButton.tsx
+PASS: StatusPill export marker found in src/components/StatusPill.tsx
+PASS: MeshSignalCard export marker found in src/components/MeshSignalCard.tsx
+PASS: LivingMeshCanvas export marker found in src/components/LivingMeshCanvas.tsx
+PASS: ChatBubble export marker found in src/components/ChatBubble.tsx
+
+------------------------------------------------------------
+13. THEME CHECKS
+------------------------------------------------------------
+PASS: Greenstone color marker found in src/theme/mauriTheme.ts
+PASS: Emerald color marker found in src/theme/mauriTheme.ts
+PASS: Panel border color marker found in src/theme/mauriTheme.ts
+PASS: Radius tokens marker found in src/theme/mauriTheme.ts
+PASS: Spacing tokens marker found in src/theme/mauriTheme.ts
+
+------------------------------------------------------------
+14. IMPORT WIRING CHECKS
+------------------------------------------------------------
+FAIL: Login AppShell import missing in app/login.tsx
+FAIL: Dashboard AppShell import missing in app/dashboard.tsx
+FAIL: Chat AppShell import missing in app/chat.tsx
+FAIL: Settings AppShell import missing in app/settings.tsx
+FAIL: Add Friend AppShell import missing in app/add-friend.tsx
+FAIL: Living Mesh AppShell import missing in app/living-mesh.tsx
+FAIL: Mesh Status AppShell import missing in app/mesh-status.tsx
+FAIL: Pixel Calling AppShell import missing in app/pixel-calling.tsx
+FAIL: Dashboard mesh client import missing in app/dashboard.tsx
+FAIL: Living Mesh mesh client import missing in app/living-mesh.tsx
+PASS: Mesh Status mesh client import found in app/mesh-status.tsx
+
+------------------------------------------------------------
+15. PACKAGE SCRIPT CHECKS
+------------------------------------------------------------
+FAIL: package.json missing start script
+PASS: package.json has typecheck/check script
+PASS: expo-router dependency found
+PASS: expo dependency found
+PASS: react-native dependency found
+PASS: express dependency found
+PASS: tsx dependency found
+
+------------------------------------------------------------
+16. TYPESCRIPT CONFIG CHECK
+------------------------------------------------------------
+PASS: tsconfig.json found
+
+------------------------------------------------------------
+17. STATIC ROUTE COMPILE SANITY
+------------------------------------------------------------
+PASS: app/_layout.tsx has default export
+PASS: app/index.tsx has default export
+PASS: app/dashboard.tsx has default export
+PASS: app/chat.tsx has default export
+PASS: app/settings.tsx has default export
+PASS: app/add-friend.tsx has default export
+PASS: app/living-mesh.tsx has default export
+PASS: app/mesh-status.tsx has default export
+PASS: app/pixel-calling.tsx has default export
+
+------------------------------------------------------------
+18. TYPESCRIPT CHECK
+------------------------------------------------------------
+Running: npx tsc --noEmit
+PASS: TypeScript passed: npx tsc --noEmit
+
+------------------------------------------------------------
+19. EXPO DOCTOR / CONFIG CHECK
+------------------------------------------------------------
+Running: npx expo config --type public
+[33m[1mWarning: [22mRoot-level [1m"expo"[22m object found. Ignoring extra keys in Expo config: "owner", "extra"
+[90mLearn more: https://expo.fyi/root-expo-object[0m[0m
+
+{
+  name: [32m'MauriMesh'[39m,
+  slug: [32m'mauri-mesh'[39m,
+  version: [32m'1.0.0'[39m,
+  orientation: [32m'portrait'[39m,
+  icon: [32m'./assets/icon.png'[39m,
+  userInterfaceStyle: [32m'light'[39m,
+  newArchEnabled: [33mtrue[39m,
+  owner: [32m'maurimesh-network'[39m,
+  scheme: [32m'maurimesh'[39m,
+  description: [90mundefined[39m,
+  sdkVersion: [32m'54.0.0'[39m,
+  platforms: [
+    [32m'ios'[39m,
+    [32m'android'[39m,
+    [32m'web'[39m
+  ],
+  splash: {
+    image: [32m'./assets/splash-icon.png'[39m,
+    resizeMode: [32m'contain'[39m,
+    backgroundColor: [32m'#ffffff'[39m
+  },
+  ios: {
+    supportsTablet: [33mtrue[39m,
+    bundleIdentifier: [32m'com.maurimesh.messenger'[39m
+  },
+  android: {
+    edgeToEdgeEnabled: [33mtrue[39m,
+    package: [32m'com.maurimesh.messenger'[39m,
+    versionCode: [33m1[39m,
+    adaptiveIcon: {
+      foregroundImage: [32m'./assets/adaptive-icon.png'[39m,
+      backgroundColor: [32m'#ffffff'[39m
+    }
+  },
+  web: {
+    favicon: [32m'./assets/favicon.png'[39m
+  },
+  extra: {
+    projectName: [32m'MauriMesh Messenger'[39m,
+    truth: [32m'Replit preview does not prove native BLE. APK/device validation required.'[39m,
+    eas: {
+      projectId: [32m'58787f88-6d39-402d-a0ec-91458f5f6246'[39m
+    }
+  }
+}
+
+PASS: Expo config resolved
+
+------------------------------------------------------------
+20. OPTIONAL API SERVER STATIC CHECK
+------------------------------------------------------------
+PASS: server/index.ts starts Express listener
+PASS: server/index.ts binds to 0.0.0.0 for Replit
+
+------------------------------------------------------------
+21. FINAL UI COMPLETION SCORE
+------------------------------------------------------------
+Total checks: 109
+Passed: 89
+Warnings: 2
+Failed: 18
+Completion score: 81%
+Final status: INCOMPLETE
+
+------------------------------------------------------------
+22. FINAL DECISION
+------------------------------------------------------------
+RESULT: FINAL UI SCREENS ARE NOT COMPLETE.
+Fix all FAIL lines in this report, then run this checker again.
+
+------------------------------------------------------------
+23. REPORT FILES CREATED
+------------------------------------------------------------
+Text report: /home/runner/workspace/maurimesh-final-ui-completion-report-20260610-063016.txt
+JSON report: /home/runner/workspace/maurimesh-final-ui-completion-report-20260610-063016.json

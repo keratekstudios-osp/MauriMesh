@@ -273,7 +273,6 @@ class MauriMeshBleModule(
             "RX_RAW_PACKET"
           )
 
-          val rxPacketId = extractPacketIdFromBytes(event.bytes)
                     val ackText =
             "MAURIMESH_ACK|from=${event.fromAddress}|bytes=${event.bytes.size}|at=${event.receivedAtMs}"
           val ackBytes = ackText.toByteArray(Charsets.UTF_8)
