@@ -1,0 +1,14 @@
+app/dashboard.tsx
+app/login.tsx
+src/components/MauriPanel.tsx
+src/components/IntelligencePanel.tsx
+src/components/BackupIntelligencePanel.tsx
+src/components/DeviceHardwarePanel.tsx
+src/components/NativeTelemetryPanel.tsx
+src/components/HardwareRuntimeControllerPanel.tsx
+src/components/BleHardwareRuntimePanel.tsx
+src/components/HybridWifiBleMeshPanel.tsx
+src/components/MessageFallbackPanel.tsx
+src/components/PixelCallingRuntimePanel.tsx
+src/components/PixelCallingBackupFallbackPanel.tsx
+src/components/AiPixelReconstructionPanel.tsx

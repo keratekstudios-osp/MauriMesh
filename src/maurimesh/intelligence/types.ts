@@ -1,72 +1,85 @@
-export type IntelligenceMode = "SIMULATION" | "LIVE_API" | "DEVICE_PROOF_REQUIRED";
+export type MauriMeshTruthClass =
+  | "APK_PROOF_SCREEN_WORKFLOW"
+  | "LOCAL_PROOF_VAULT_STORAGE"
+  | "LEARNER_CLASSIFICATION_REPORT"
+  | "NATIVE_BLE_GATT_PACKET_BOUND"
+  | "INCONCLUSIVE"
+  | "BLOCKED";
 
-export type IntelligenceSignal = {
-  id: string;
-  name: string;
-  score: number;
-  status: "excellent" | "good" | "warning" | "critical";
-  detail: string;
-};
+export type MauriMeshDecision =
+  | "APPROVED"
+  | "APPROVED_WITH_WARNING"
+  | "REVIEW_REQUIRED"
+  | "REFUSED"
+  | "BLOCKED";
 
-export type RouteCandidate = {
-  id: string;
-  name: string;
-  transport: "BLE" | "BLE_RELAY" | "WIFI" | "WIFI_DIRECT" | "INTERNET" | "HYBRID";
-  latencyMs: number;
-  trust: number;
-  energyCost: number;
-  deliveryConfidence: number;
-  available: boolean;
-};
+export type MauriMeshRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "PROTECTED";
 
-export type RouteDecision = {
-  selected: RouteCandidate;
-  candidates: RouteCandidate[];
-  reason: string;
-  score: number;
-};
+export type MauriMeshTransport = "BLE_GATT" | "BLE_SCREEN_WORKFLOW" | "WIFI_LOCAL" | "STORE_FORWARD" | "UNKNOWN";
 
-export type ProofDecision = {
+export type MauriMeshNodeRole = "PHONE_A" | "PHONE_B" | "PHONE_C" | "GATEWAY" | "RELAY" | "ANCHOR" | "UNKNOWN";
+
+export type MauriMeshProofSignal = {
   packetId: string;
-  hashPresent: boolean;
-  ackPresent: boolean;
-  routePresent: boolean;
-  timestampPresent: boolean;
-  deviceLogPresent: boolean;
-  confidence: number;
-  truth: string;
+  event: string;
+  actor: string;
+  transport: MauriMeshTransport;
+  timestamp: string;
+  source: "APK" | "REACT_NATIVE_JS" | "ANDROID_NATIVE" | "LOGCAT" | "VAULT" | "LEARNER";
+  raw?: string;
 };
 
-export type GovernanceDecision = {
-  action: "approved" | "approved_with_warning" | "review_required" | "refused";
-  culturalRisk: "low" | "medium" | "high" | "protected";
-  manaProtection: number;
-  auditNote: string;
+export type MauriMeshRouteCandidate = {
+  id: string;
+  path: string[];
+  transport: MauriMeshTransport;
+  latencyScore: number;
+  trustScore: number;
+  resilienceScore: number;
+  governanceScore: number;
+  congestionScore: number;
+  finalScore: number;
+  decision: MauriMeshDecision;
+  reason: string;
 };
 
-export type SelfHealingDecision = {
-  healthScore: number;
-  detectedFaults: string[];
-  repairActions: string[];
-  homeostasis: "stable" | "watching" | "repairing" | "critical";
+export type MauriMeshGovernanceResult = {
+  decision: MauriMeshDecision;
+  risk: MauriMeshRiskLevel;
+  tikanga: string[];
+  warnings: string[];
+  reason: string;
 };
 
-export type DeviceReadinessDecision = {
-  readinessScore: number;
-  requiredProof: string[];
-  readyForReplit: boolean;
-  readyForApk: boolean;
-  readyForRealBleProof: boolean;
+export type MauriMeshResilienceResult = {
+  health: "GREEN" | "AMBER" | "RED";
+  issues: string[];
+  recoveryPlan: string[];
+  selfHealAllowed: boolean;
 };
 
-export type IntelligenceReport = {
-  mode: IntelligenceMode;
-  overallScore: number;
-  signals: IntelligenceSignal[];
-  route: RouteDecision;
-  proof: ProofDecision;
-  governance: GovernanceDecision;
-  selfHealing: SelfHealingDecision;
-  deviceReadiness: DeviceReadinessDecision;
-  finalTruth: string;
+export type MauriMeshProofVerdict = {
+  packetId: string;
+  truthClass: MauriMeshTruthClass;
+  decision: MauriMeshDecision;
+  requiredEvents: string[];
+  foundEvents: string[];
+  missingEvents: string[];
+  nativeBleGattPacketBoundPass: boolean;
+  reason: string;
+};
+
+export type MauriMeshExamResult = {
+  examId: string;
+  name: string;
+  passed: boolean;
+  decision: MauriMeshDecision;
+  truthClass: MauriMeshTruthClass;
+  score: number;
+  checks: Array<{
+    id: string;
+    label: string;
+    passed: boolean;
+    evidence: string;
+  }>;
 };

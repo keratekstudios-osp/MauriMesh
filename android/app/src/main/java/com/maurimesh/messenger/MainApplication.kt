@@ -17,6 +17,7 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 import com.maurimesh.messenger.maurimesh.blehardware.MauriMeshHardwareBlePackage
+import android.util.Log
 
 class MainApplication : Application(), ReactApplication {
 
@@ -25,7 +26,10 @@ class MainApplication : Application(), ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-          add(MauriMeshHardwareBlePackage())
+
+            Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_PACKAGE_REGISTRATION_V7 | source=MainApplication | action=add_package | module=MauriMeshNativeBlePacket | finalPassClaimed=false")
+            add(MauriMeshNativeBlePacketPackage())
+add(MauriMeshHardwareBlePackage())
                 add(MauriMeshHardwareTelemetryPackage())
                             }.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:

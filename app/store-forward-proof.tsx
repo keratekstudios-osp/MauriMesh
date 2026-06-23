@@ -1,4 +1,17 @@
 import React, { useMemo, useState } from "react";
+/* MAURIMESH_SAFE_STORE_FORWARD_LOGCAT_BRIDGE_V1_START */
+function mauriMeshEmitStoreForwardProofToLogcat(line: unknown) {
+  try {
+    const text = String(line ?? "");
+    if (!text.includes("MAURIMESH_STORE_FORWARD_PROOF")) return;
+    console.log(text);
+    console.warn(text);
+    console.error(text);
+  } catch (_) {}
+}
+/* MAURIMESH_SAFE_STORE_FORWARD_LOGCAT_BRIDGE_V1_END */
+
+
 import {
   Alert,
   Platform,
@@ -10,9 +23,11 @@ import {
   View,
 } from "react-native";
 import {
-  STORE_FORWARD_PROOF,
+STORE_FORWARD_PROOF,
   STORE_FORWARD_STAGES,
 } from "../src/maurimesh/proof/storeForwardProof";
+import { nativeBlePacketLogSafe } from "../src/maurimesh/native/nativeBlePacketLogger";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type RoleKey = "PHONE_A" | "PHONE_B" | "PHONE_C";
 type DeviceName = "A06" | "S10" | "A16";
@@ -76,6 +91,7 @@ export default function StoreForwardProofScreen() {
   function proofLine(role: RoleKey, stageId: string, activePacketId: string, message: string) {
     const line =
       `${new Date().toISOString()} | MAURIMESH_STORE_FORWARD_PROOF | ${role} | ${roles[role]} | ${stageId} | packetId=${activePacketId} | ${message}`;
+  mauriMeshEmitStoreForwardProofToLogcat(line);
     console.log(line);
     setProofLog((prev) => [...prev, line]);
     return line;
@@ -139,6 +155,7 @@ export default function StoreForwardProofScreen() {
       nextDone[stage.id] = true;
       const line =
         `${new Date().toISOString()} | MAURIMESH_STORE_FORWARD_PROOF | ${stage.role} | ${roles[stage.role]} | ${stage.id} | packetId=${packetId} | GUIDED_AUTO_EXPECTED_SEQUENCE`;
+  mauriMeshEmitStoreForwardProofToLogcat(line);
       console.log(line);
       lines.push(line);
     });
@@ -190,6 +207,8 @@ export default function StoreForwardProofScreen() {
             setProofLog([]);
             setExamStarted(false);
             console.log(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_REJECTED_RESET | packetId=${packetId}`);
+            console.warn(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_REJECTED_RESET | packetId=${packetId}`);
+            console.error(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_REJECTED_RESET | packetId=${packetId}`);
           },
         },
         {
@@ -197,6 +216,23 @@ export default function StoreForwardProofScreen() {
           onPress: () => {
             setApproval("APPROVED");
             console.log(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_APPROVED | packetId=${packetId}`);
+
+      // MAURIMESH_STORE_FORWARD_VAULT_SAVE_CALL_V1
+      void mauriMeshSaveStoreForwardProofToVault(
+        packetId,
+        typeof proofLog !== "undefined"
+          ? String(proofLog)
+          : typeof currentProofLog !== "undefined"
+            ? String(currentProofLog)
+            : typeof logText !== "undefined"
+              ? String(logText)
+              : typeof report !== "undefined"
+                ? String(report)
+                : "Store-forward proof completed. Proof log state name not detected by patch."
+      );
+
+            console.warn(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_APPROVED | packetId=${packetId}`);
+            console.error(`MAURIMESH_STORE_FORWARD_PROOF | EXAM_APPROVED | packetId=${packetId}`);
             Alert.alert(
               "Congratulations",
               "Store-forward proof exam approved inside the app. Archive matching logs and screenshots now."
@@ -215,6 +251,8 @@ export default function StoreForwardProofScreen() {
     setExamStarted(false);
     setApproval("PENDING");
     console.log("MAURIMESH_STORE_FORWARD_PROOF | SCREEN_RESET");
+    console.warn("MAURIMESH_STORE_FORWARD_PROOF | SCREEN_RESET");
+    console.error("MAURIMESH_STORE_FORWARD_PROOF | SCREEN_RESET");
   }
 
   function buildReport() {
@@ -584,3 +622,72 @@ const styles = StyleSheet.create({
   },
   resetText: { color: "#FCA5A5", fontSize: 15, fontWeight: "900" },
 });
+
+
+function mauriMeshNativePacketProofLog(stage: string, packetId: string, detail?: string) {
+  nativeBlePacketLogSafe({
+    role: "PHONE_PROOF",
+    stage,
+    packetId,
+    transport: "BRIDGE_LOG_ONLY",
+    detail: detail || stage,
+  });
+}
+// MAURIMESH_NATIVE_BLE_PACKET_PATCH_MARKER
+
+
+/*
+MAURIMESH_NATIVE_BLE_PACKET_REQUIRED_STAGE_MAP
+
+When proof stage buttons/log events fire, call:
+
+nativeBlePacketLogSafe({
+  role: "A06_PHONE_A" | "S10_PHONE_B" | "A16_PHONE_C",
+  stage: "GATT_WRITE_PACKET" | "GATT_READ_PACKET" | "RELAY_PACKET_NATIVE" | "ACK_PACKET_NATIVE" | "GATT_CHARACTERISTIC_CHANGED",
+  packetId,
+  transport: "BRIDGE_LOG_ONLY",
+  detail: "TX_A06_TO_S10" | "RX_S10_FROM_A06" | "RELAY_S10_TO_A16" | "RX_A16_FROM_S10" | "ACK_A16_TO_S10" | "ACK_RELAY_S10_TO_A06" | "ACK_RECEIVED_A06"
+});
+
+This patch does not claim real BLE/GATT proof.
+Real native PASS requires transport=BLE_GATT inside Android Bluetooth/GATT callbacks.
+*/
+
+
+/* MAURIMESH_STORE_FORWARD_VAULT_STORAGE_V1_START */
+async function mauriMeshSaveStoreForwardProofToVault(packetId: string, proofLog: string) {
+  try {
+    const safePacketId = String(packetId || "NO_PACKET_ID").trim();
+    const key = `maurimesh_proof_store_forward_${safePacketId}`;
+    const payload = {
+      type: "MAURIMESH_STORE_FORWARD_PROOF",
+      packetId: safePacketId,
+      truthClass: "APK_PROOF_SCREEN_WORKFLOW",
+      nativeBleGattPacketBoundPass: false,
+      savedAt: new Date().toISOString(),
+      proofLog,
+      warning:
+        "Native BLE/GATT packet-bound PASS is not claimed unless the same packetId appears inside native BLE/GATT transport logs.",
+    };
+
+    await AsyncStorage.setItem(key, JSON.stringify(payload));
+
+    console.log(
+      `MAURIMESH_PROOF_VAULT_SAVE | STORE_FORWARD | packetId=${safePacketId} | key=${key} | truthClass=APK_PROOF_SCREEN_WORKFLOW | nativeBleGattPacketBoundPass=false`
+    );
+  } catch (err) {
+    console.log(
+      `MAURIMESH_PROOF_VAULT_SAVE_ERROR | STORE_FORWARD | packetId=${packetId || "NO_PACKET_ID"} | error=${
+        err instanceof Error ? err.message : "UNKNOWN"
+      }`
+    );
+  }
+}
+/* MAURIMESH_STORE_FORWARD_VAULT_STORAGE_V1_END */
+
+
+function mauriMeshStoreForwardAutoSavePatchMarker() {
+  // MAURIMESH_STORE_FORWARD_AUTO_SAVE_PATCHED
+  // Packet variable detected: packetId
+  // Log variable detected: proofLog
+}

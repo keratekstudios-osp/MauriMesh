@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { mauriTheme } from "../theme/mauriTheme";
+import { markButtonPress } from "../maurimesh/runtime/runtimeLog";
 
 export function MauriButton({
   title,
@@ -13,7 +14,7 @@ export function MauriButton({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => { markButtonPress(title || "MauriButton"); onPress?.(); }}
       style={({ pressed }) => [
         styles.base,
         variant === "primary" && styles.primary,

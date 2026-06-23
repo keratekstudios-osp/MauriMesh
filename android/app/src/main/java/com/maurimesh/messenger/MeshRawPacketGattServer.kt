@@ -45,6 +45,7 @@ class MeshRawPacketGattServer(
       offset: Int,
       value: ByteArray?
     ) {
+      MauriMeshGattPacketProof.logGattPayload("GATT_SERVER_WRITE_RECEIVED", value, "MeshRawPacketGattServer.kt onCharacteristicWriteRequest")
       val address = device?.address ?: "unknown"
       val uuid = characteristic?.uuid
       val bytes = value ?: ByteArray(0)

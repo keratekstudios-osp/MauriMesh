@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "MauriMesh",
+    "slug": "mauri-mesh",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.maurimesh.messenger"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.maurimesh.messenger",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "58787f88-6d39-402d-a0ec-91458f5f6246"
+      },
+      "projectName": "MauriMesh Messenger",
+      "truth": "Replit preview does not prove native BLE. APK/device validation required."
+    },
+    "owner": "maurimesh-network",
+    "scheme": "maurimesh"
+  },
+  "owner": "mauri-mesh-network",
+  "extra": {
+    "eas": {}
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "proofName": "MauriMesh Store-Forward Delay Proof",
+  "archiveStatus": "TAMPER_EVIDENT_HASH_MANIFEST_CREATED",
+  "packetId": "MMSF-TEJFNH-K3FKYM",
+  "createdAt": "2026-06-13T16:56:29.463Z",
+  "hashAlgorithm": "SHA-256",
+  "sealedFileCount": 4,
+  "sealedFiles": [
+    {
+      "relativePath": "docs/proof-archives/store-forward/store_forward_MMSF-TEJFNH-K3FKYM.log",
+      "sizeBytes": 1684,
+      "sha256": "29beeda1422ec4153b10aa8ae93d7ee37d4748b94fff7128d1aa6ce5a4a421a3"
+    },
+    {
+      "relativePath": "tools/proof-verifiers/verify-store-forward-proof.js",
+      "sizeBytes": 8948,
+      "sha256": "8bbb9100a93865b033b8a3cfc3db6197ce67a9d95ec5e4c5fbf3be8f49066f64"
+    },
+    {
+      "relativePath": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_certificate.md",
+      "sizeBytes": 2588,
+      "sha256": "52f3a7cbc8cf91e9a957fd4d4d62b357c26d25551140a0f3201b92cae5335aa6"
+    },
+    {
+      "relativePath": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_verifier_report.json",
+      "sizeBytes": 3847,
+      "sha256": "156a099efbd265129aab684b4381b5feeffab76f8eb18535c33524fa7dd219ae"
+    }
+  ],
+  "verificationRule": "Any later change to sealed files must produce a different SHA-256 hash and fail verification."
+}

@@ -1,0 +1,293 @@
+package com.maurimesh.messenger
+
+import com.maurimesh.messenger.maurimesh.telemetry.MauriMeshHardwareTelemetryPackage
+import android.app.Application
+import android.content.res.Configuration
+
+import com.facebook.react.PackageList
+import com.facebook.react.ReactApplication
+import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+import com.facebook.react.ReactNativeHost
+import com.facebook.react.ReactPackage
+import com.facebook.react.ReactHost
+import com.facebook.react.common.ReleaseLevel
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
+import com.facebook.react.defaults.DefaultReactNativeHost
+
+import expo.modules.ApplicationLifecycleDispatcher
+import expo.modules.ReactNativeHostWrapper
+import com.maurimesh.messenger.maurimesh.blehardware.MauriMeshHardwareBlePackage
+import android.content.Context
+import android.util.Log
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactMethod
+import java.lang.reflect.Modifier
+
+class MainApplication : Application(), ReactApplication {
+
+  override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
+      this,
+      object : DefaultReactNativeHost(this) {
+        override fun getPackages(): List<ReactPackage> =
+            PackageList(this).packages.apply {
+            add(MauriMeshNativeBlePacketPackage())
+          add(MauriMeshHardwareBlePackage())
+                add(MauriMeshHardwareTelemetryPackage())
+                            }.apply {
+              // Packages that cannot be autolinked yet can be added manually here, for example:
+              // add(MyReactNativePackage())
+            }
+
+          override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
+
+          override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
+
+          override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
+      }
+  )
+
+  override val reactHost: ReactHost
+    get() = ReactNativeHostWrapper.createReactHost(applicationContext, reactNativeHost)
+
+  override fun onCreate() {
+    super.onCreate()
+    DefaultNewArchitectureEntryPoint.releaseLevel = try {
+      ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())
+    } catch (e: IllegalArgumentException) {
+      ReleaseLevel.STABLE
+    }
+    loadReactNative(this)
+    ApplicationLifecycleDispatcher.onApplicationCreate(this)
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    ApplicationLifecycleDispatcher.onConfigurationChanged(this, newConfig)
+  }
+
+  // MM_GATT_BRIDGE_V4_BEGIN
+  @ReactMethod
+  fun triggerGattPacketPayloadProof(packetId: String, promise: Promise) {
+    val cleanPacketId = packetId.trim().ifEmpty { "MMN-NO-PACKET-ID" }
+
+    Log.i(
+      "MAURIMESH_NATIVE_BLE_GATT",
+      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=$cleanPacketId | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+    )
+
+    val result = Arguments.createMap()
+    result.putString("packetId", cleanPacketId)
+    result.putString("module", "MauriMeshNativeBlePacket")
+    result.putString("method", "triggerGattPacketPayloadProof")
+    result.putBoolean("nativeMethodEntered", true)
+    result.putBoolean("finalPassClaimed", false)
+
+    val helperResult = tryCallMauriMeshGattPacketProofHelper(cleanPacketId)
+
+    result.putString("helperResult", helperResult)
+
+    Log.i(
+      "MAURIMESH_NATIVE_BLE_GATT",
+      "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=$cleanPacketId | helperResult=$helperResult | finalPassClaimed=false"
+    )
+
+    promise.resolve(result)
+  }
+
+  @ReactMethod
+  fun triggerNativeGattPacketPayload(packetId: String, promise: Promise) {
+    triggerGattPacketPayloadProof(packetId, promise)
+  }
+
+  @ReactMethod
+  fun triggerGattPacketPayload(packetId: String, promise: Promise) {
+    triggerGattPacketPayloadProof(packetId, promise)
+  }
+
+  @ReactMethod
+  fun writeGattPacketProof(packetId: String, promise: Promise) {
+    triggerGattPacketPayloadProof(packetId, promise)
+  }
+
+  @ReactMethod
+  fun sendGattPacketProof(packetId: String, promise: Promise) {
+    triggerGattPacketPayloadProof(packetId, promise)
+  }
+
+  @ReactMethod
+  fun runGattPacketProof(packetId: String, promise: Promise) {
+    triggerGattPacketPayloadProof(packetId, promise)
+  }
+
+  private fun tryCallMauriMeshGattPacketProofHelper(packetId: String): String {
+    return try {
+      val helperClass = Class.forName("com.maurimesh.messenger.MauriMeshGattPacketProof")
+
+      val preferredNames = setOf(
+        "triggerGattPacketPayloadProof",
+        "triggerNativeGattPacketPayload",
+        "triggerGattPacketPayload",
+        "startGattPacketProof",
+        "writeGattPacketProof",
+        "sendGattPacketProof",
+        "runGattPacketProof",
+        "emitGattPacketPayloadProof",
+        "emitGattPacketPayload",
+        "emitRawPacketProofEvent",
+        "logGattPacketPayload",
+        "recordGattPacketPayload",
+        "proveGattPacketPayload"
+      )
+
+      val preferredMethods = helperClass.declaredMethods
+        .filter { method -> preferredNames.contains(method.name) }
+        .sortedWith(compareBy({ it.parameterTypes.size }, { it.name }))
+
+      val fallbackMethods = helperClass.declaredMethods
+        .filter { method ->
+          val lower = method.name.lowercase()
+          (
+            lower.contains("gatt") ||
+            lower.contains("packet") ||
+            lower.contains("payload") ||
+            lower.contains("proof")
+          ) && !preferredNames.contains(method.name)
+        }
+        .sortedWith(compareBy({ it.parameterTypes.size }, { it.name }))
+
+      val methods = preferredMethods + fallbackMethods
+
+      if (methods.isEmpty()) {
+        val available = helperClass.declaredMethods
+          .map { method -> method.name + "/" + method.parameterTypes.size }
+          .distinct()
+          .sorted()
+          .joinToString(",")
+
+        Log.w(
+          "MAURIMESH_NATIVE_BLE_GATT",
+          "GATT_HELPER_METHOD_MISSING | packetId=$packetId | availableMethods=$available | nativePacketBound=false"
+        )
+
+        return "HELPER_FOUND_METHOD_MISSING:$available"
+      }
+
+      val instance = getHelperInstance(helperClass)
+      var lastError = ""
+
+      for (method in methods) {
+        try {
+          method.isAccessible = true
+
+          val target = if (Modifier.isStatic(method.modifiers)) {
+            null
+          } else {
+            instance
+          }
+
+          if (target == null && !Modifier.isStatic(method.modifiers)) {
+            lastError = "No usable INSTANCE/constructor for non-static method ${method.name}"
+            continue
+          }
+
+          val args = buildArgsForMethod(method.parameterTypes, packetId) ?: continue
+          method.invoke(target, *args)
+
+          Log.i(
+            "MAURIMESH_NATIVE_BLE_GATT",
+            "GATT_HELPER_METHOD_CALLED | packetId=$packetId | helper=${method.name}/${method.parameterTypes.size} | nativePacketBound=false"
+          )
+
+          return "HELPER_CALLED:${method.name}/${method.parameterTypes.size}"
+        } catch (error: Throwable) {
+          lastError = error.message ?: error.toString()
+
+          Log.w(
+            "MAURIMESH_NATIVE_BLE_GATT",
+            "GATT_HELPER_METHOD_CALL_ERROR | packetId=$packetId | helper=${method.name}/${method.parameterTypes.size} | error=$lastError | nativePacketBound=false"
+          )
+        }
+      }
+
+      Log.w(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_HELPER_CALL_FAILED | packetId=$packetId | lastError=$lastError | nativePacketBound=false"
+      )
+
+      "HELPER_CALL_FAILED:$lastError"
+    } catch (error: Throwable) {
+      val msg = error.message ?: error.toString()
+
+      Log.w(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_HELPER_CLASS_UNAVAILABLE | packetId=$packetId | error=$msg | nativePacketBound=false"
+      )
+
+      "HELPER_CLASS_UNAVAILABLE:$msg"
+    }
+  }
+
+  private fun getHelperInstance(helperClass: Class<*>): Any? {
+    return try {
+      helperClass.getField("INSTANCE").get(null)
+    } catch (_: Throwable) {
+      try {
+        val constructor = helperClass.getDeclaredConstructor()
+        constructor.isAccessible = true
+        constructor.newInstance()
+      } catch (_: Throwable) {
+        null
+      }
+    }
+  }
+
+  private fun buildArgsForMethod(parameterTypes: Array<Class<*>>, packetId: String): Array<Any>? {
+    val args = ArrayList<Any>()
+
+    for ((index, type) in parameterTypes.withIndex()) {
+      val typeName = type.name
+
+      when {
+        type == String::class.java -> {
+          val value = when (index) {
+            0 -> packetId
+            1 -> "BUTTON_NATIVE_GATT_TRIGGER"
+            2 -> "MauriMeshNativeBlePacket"
+            else -> "MauriMesh"
+          }
+          args.add(value)
+        }
+
+        typeName == "android.content.Context" ||
+          typeName == "com.facebook.react.bridge.ReactApplicationContext" ||
+          Context::class.java.isAssignableFrom(type) -> {
+          args.add(reactApplicationContext)
+        }
+
+        type == Boolean::class.javaPrimitiveType ||
+          type == java.lang.Boolean::class.java -> {
+          args.add(false)
+        }
+
+        type == Int::class.javaPrimitiveType ||
+          type == java.lang.Integer::class.java -> {
+          args.add(0)
+        }
+
+        type == Long::class.javaPrimitiveType ||
+          type == java.lang.Long::class.java -> {
+          args.add(System.currentTimeMillis())
+        }
+
+        else -> {
+          return null
+        }
+      }
+    }
+
+    return args.toTypedArray()
+  }
+  // MM_GATT_BRIDGE_V4_END
+
+}

@@ -1,0 +1,189 @@
+export type MauriMeshTransport =
+  | "BLE"
+  | "WIFI"
+  | "WIFI_DIRECT"
+  | "LOCAL_WIFI"
+  | "INTERNET"
+  | "UNKNOWN"
+  | string;
+
+export type MauriMeshActivityEvent = {
+  id?: string;
+  packetId: string;
+  stage:
+    | "SEND"
+    | "TX_START"
+    | "TX_BLE_START"
+    | "TX_BLE_FOUND"
+    | "TX_BLE_CONNECT"
+    | "TX_BLE_OK"
+    | "TX_WIFI_START"
+    | "TX_WIFI_OK"
+    | "TX_INTERNET_START"
+    | "TX_INTERNET_OK"
+    | "RX_BLE"
+    | "WAITING_FOR_ACK"
+    | "PENDING_ACK"
+    | "RX_ACK"
+    | "ACK"
+    | "DELIVERED"
+    | "FAIL"
+    | "ERROR"
+    | "TIMEOUT"
+    | "ACK_TIMEOUT"
+    | string;
+  status?: string;
+  transport: MauriMeshTransport;
+  fromPeerId?: string | null;
+  toPeerId?: string | null;
+  peerId?: string | null;
+  routeId?: string | null;
+  hopIndex?: number | null;
+  hopLimit?: number | null;
+  latencyMs?: number | null;
+  payloadBytes?: number | null;
+  retryCount?: number;
+  error?: string | null;
+  detail?: string | null;
+  raw?: unknown;
+  createdAt?: string;
+};
+
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  process.env.EXPO_PUBLIC_BACKEND_BASE_URL ||
+  process.env.VITE_API_BASE_URL ||
+  process.env.VITE_BACKEND_BASE_URL ||
+  "";
+
+function getApiBase(): string {
+  if (!API_BASE) {
+    throw new Error(
+      "Missing MauriMesh API base URL. Set EXPO_PUBLIC_API_BASE_URL or EXPO_PUBLIC_BACKEND_BASE_URL."
+    );
+  }
+
+  return API_BASE.replace(/\/$/, "");
+}
+
+async function parseJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    const json = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+      throw new Error(
+        `MauriMesh API failed ${response.status}: ${JSON.stringify(json)}`
+      );
+    }
+
+    return json;
+  } catch (error) {
+    if (!response.ok) {
+      throw new Error(`MauriMesh API failed ${response.status}: ${text}`);
+    }
+
+    throw error;
+  }
+}
+
+export async function getMauriMeshActivity() {
+  const response = await fetch(`${getApiBase()}/api/activity`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  return parseJsonResponse(response);
+}
+
+export async function getMauriMeshIntelligence() {
+  const response = await fetch(`${getApiBase()}/api/activity/intelligence`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  return parseJsonResponse(response);
+}
+
+export async function ingestMauriMeshActivity(event: MauriMeshActivityEvent) {
+  const response = await fetch(`${getApiBase()}/api/activity/ingest`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(event)
+  });
+
+  return parseJsonResponse(response);
+}
+
+export async function getMauriMeshPacketDecision(packet: {
+  packetId: string;
+  payloadBytes?: number;
+  preferredTransport?: MauriMeshTransport;
+  targetPeerId?: string;
+  ttl?: number;
+}) {
+  const response = await fetch(`${getApiBase()}/api/mesh/packet/decision`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(packet)
+  });
+
+  return parseJsonResponse(response);
+}
+
+export async function reportBleSendStart(input: {
+  packetId: string;
+  fromPeerId?: string;
+  toPeerId?: string;
+  payloadBytes?: number;
+  detail?: string;
+}) {
+  return ingestMauriMeshActivity({
+    ...input,
+    stage: "TX_BLE_START",
+    status: "SEND",
+    transport: "BLE"
+  });
+}
+
+export async function reportBleAck(input: {
+  packetId: string;
+  fromPeerId?: string;
+  toPeerId?: string;
+  latencyMs?: number;
+  detail?: string;
+}) {
+  return ingestMauriMeshActivity({
+    ...input,
+    stage: "ACK",
+    status: "DELIVERED",
+    transport: "BLE"
+  });
+}
+
+export async function reportBleFail(input: {
+  packetId: string;
+  fromPeerId?: string;
+  toPeerId?: string;
+  error?: string;
+  retryCount?: number;
+  detail?: string;
+}) {
+  return ingestMauriMeshActivity({
+    ...input,
+    stage: "TX_BLE_ERROR",
+    status: "FAIL",
+    transport: "BLE"
+  });
+}

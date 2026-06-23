@@ -1,0 +1,45 @@
+import { TouchableOpacity,
+import { MauriPanel } from "../src/components/MauriPanel";
+ useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { AppShell } from "../src/components/AppShell";
+import { MauriButton } from "../src/components/MauriButton";
+import { MauriMetricCard } from "../src/components/MauriMetricCard";
+import { MauriPageHeader } from "../src/components/MauriPageHeader";
+import { MeshSignalCard } from "../src/components/MeshSignalCard";
+import { MauriCoreStatusPanel } from "../src/components/MauriCoreStatusPanel";
+import { SafeNavButton } from "../src/components/SafeNavButton";
+import { getMeshStatus, MeshStatus } from "../src/lib/meshClient";
+import { mauriTheme } from "../src/theme/mauriTheme";
+import { MaoriProtocolPanel } from "../src/components/MaoriProtocolPanel";
+
+export default function DashboardScreen() {
+  const router = useRouter();
+  const [mesh, setMesh] = useState<MeshStatus | null>(null);
+
+  useEffect(() => {
+    getMeshStatus()
+      .then(setMesh)
+      .catch(() => {
+        setMesh({
+          mode: "SIMULATION",
+          message: "Mesh status unavailable. Showing safe dashboard fallback.",
+          nodes: [],
+          routes: [],
+        });
+      });
+  }, []);
+
+  const mode = mesh?.mode || "UNAVAILABLE";
+
+  return (
+    <AppShell>
+      <MauriPageHeader
+        eyebrow="MAURIMESH COMMAND"
+        title="Dashboard"
+        subtitle="Final UI hub for messenger, living mesh, proof, routing, governance, device readiness, and backup wiring."
+        tone="success"
+      />
+
+      <MeshSignalCard

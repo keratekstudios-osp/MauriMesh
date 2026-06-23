@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { initRoutingConfig } from "../lib/lib/routingConfig";
+import { markAppBoot } from "../src/maurimesh/runtime/runtimeLog";
+
+markAppBoot("app/_layout.tsx");
 
 export default function RootLayout() {
   useEffect(() => {

@@ -1,0 +1,11 @@
+MAURIMESH PUBLIC SUMMARY GITHUB READBACK VERIFY
+
+Remote: https://github.com/MauriMesh/MauriMesh.git
+Expected commit: e314d7cdaca22e381285123cdcfc02ca5d8fe495
+Remote branch: proof-summary/MMSF-RAW-LIVE-001
+Branch readback: e314d7cdaca22e381285123cdcfc02ca5d8fe495
+Remote tag: proof/public-summary-MMSF-RAW-LIVE-001
+Tag readback: 375d594ea3480cb851b1fda40f3a9598cede1954
+Tag deref commit: e314d7cdaca22e381285123cdcfc02ca5d8fe495
+Remote main: UNTOUCHED
+Draft release: STILL DRAFT / NOT PUBLISHED

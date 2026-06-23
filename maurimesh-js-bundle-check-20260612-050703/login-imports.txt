@@ -1,0 +1,40 @@
+import { useRouter } from "expo-router";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { AppShell } from "../src/components/AppShell";
+import { MauriButton } from "../src/components/MauriButton";
+import { StatusPill } from "../src/components/StatusPill";
+import { mauriTheme } from "../src/theme/mauriTheme";
+import { MauriPanel } from "../src/components/MauriPanel";
+
+export default function LoginScreen() {
+  const router = useRouter();
+
+  return (
+    <AppShell scroll={false}>
+      <View style={styles.hero}>
+        <StatusPill label="MAURIMESH MESSENGER" tone="success" />
+        <Text style={styles.title}>MauriMesh</Text>
+        <Text style={styles.tagline}>Messenger</Text>
+        <Text style={styles.subtitle}>
+          Secure mesh communication prepared for offline routing, relay logic,
+          living governance, and future native device proof.
+        </Text>
+      </View>
+
+      <MauriPanel glow>
+        <Text style={styles.cardTitle}>Enter Network</Text>
+        <Text style={styles.cardText}>
+          UI, navigation, API fallback, backup route wiring, and simulation views are ready.
+          Real BLE proof still requires APK on physical phones.
+        </Text>
+        <MauriButton title="Open Dashboard" onPress={() => router.replace("/dashboard")} />
+      </MauriPanel>
+    </AppShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  hero: {
+    flex: 1,
+    justifyContent: "center",

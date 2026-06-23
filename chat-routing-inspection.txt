@@ -1,0 +1,77 @@
+app/chat.tsx:12:      <View style={styles.bubbleLeft}><Text style={styles.text}>Safe chat UI loaded.</Text></View>
+app/dashboard.tsx.before-mauricore-governance-1780917848630.bak:15:  ["Chat", "/chat"],
+lib/lib/mesh/meshMessageValidator.ts:33:  "CHAT_MESSAGE",
+lib/lib/mesh/MeshFragmentation.ts:9: *   { messageId, from, to, index, total, payload }
+lib/lib/mesh/MeshFragmentation.ts:16:  messageId: string;
+lib/lib/mesh/MeshFragmentation.ts:45: * @param messageId Stable ID for this message (used to reassemble).
+lib/lib/mesh/MeshFragmentation.ts:52:  messageId: string,
+lib/lib/mesh/MeshFragmentation.ts:62:    messageId,
+lib/lib/mesh/MeshFragmentation.ts:79:    typeof value.messageId === "string" &&
+lib/lib/mesh/MeshFragmentation.ts:104:    const { messageId, index, total, payload } = fragment;
+lib/lib/mesh/MeshFragmentation.ts:106:    if (!this.buffers.has(messageId)) {
+lib/lib/mesh/MeshFragmentation.ts:107:      this.buffers.set(messageId, new Array(total).fill(""));
+lib/lib/mesh/MeshFragmentation.ts:110:    const buf = this.buffers.get(messageId)!;
+lib/lib/mesh/MeshFragmentation.ts:115:    this.buffers.delete(messageId);
+lib/lib/mesh/MeshFragmentation.ts:124:  discard(messageId: string): void {
+lib/lib/mesh/MeshFragmentation.ts:125:    this.buffers.delete(messageId);
+lib/lib/mesh/MeshFragmentation.ts:141:  const { messageId, total } = fragments[0];
+lib/lib/mesh/MeshFragmentation.ts:143:  if (fragments.some((f) => f.messageId !== messageId)) return null;
+lib/lib/mesh/mesh-service.ts:58:    type: "CHAT_MESSAGE",
+lib/lib/mesh/mesh-service.ts:65:    priority: packetPriority("CHAT_MESSAGE", toNodeId),
+lib/lib/mesh/mesh-service.ts:98:    if (packet.type === "CHAT_MESSAGE") {
+lib/lib/mesh/mesh-service.ts:143:/** Send a chat message to toNodeId through the mesh. */
+lib/lib/mesh/mesh-service.ts:144:export function sendMessage(
+lib/lib/mesh/mesh-service.ts:178:/** Register a callback to be called when a CHAT_MESSAGE arrives for this device. */
+lib/lib/mesh/meshReceiveLoop.ts:58:        // Drop transport-level ACK frames (not chat content)
+lib/lib/mesh/meshMessageStore.ts:8:  chatId: string;
+lib/lib/mesh/meshMessageStore.ts:110:export function chatMessageToStored(
+lib/lib/mesh/meshMessageStore.ts:116:    chatId: msg.sender === "me" ? "BROADCAST" : (msg.senderId ?? "unknown"),
+lib/lib/mesh/__tests__/crypto-identity.test.ts:60:    type: "CHAT_MESSAGE",
+lib/lib/mesh/maurimesh-intelligent-contract.ts:16:  | "CHAT_MESSAGE"
+lib/lib/mesh/maurimesh-intelligent-contract.ts:37:    case "CHAT_MESSAGE":   return toNodeId === "BROADCAST" ? 4 : 5;
+lib/lib/mesh/useMeshTransport.ts:328:      type: "CHAT_MESSAGE",
+lib/lib/mesh/useMeshTransport.ts:335:      priority: packetPriority("CHAT_MESSAGE", corePkt.toNodeId),
+lib/lib/mesh/useMeshTransport.ts:484:   *  - Every other type (CHAT_MESSAGE, ACK, READ_ACK, CALL_INVITE, …) MUST be
+lib/lib/mesh/useMeshTransport.ts:882:      // Raise the incoming call banner and add a chat bubble so the user
+lib/lib/mesh/useMeshTransport.ts:928:    if (packet.type === "CHAT_MESSAGE") {
+lib/lib/mesh/useMeshTransport.ts:942:        chatId: packet.fromNodeId,
+lib/lib/mesh/useMeshTransport.ts:1312:        // a chat bubble.
+lib/lib/mesh/useMeshTransport.ts:1329:          } catch { /* not a valid READ_ACK — fall through to chat bubble */ }
+lib/lib/mesh/useMeshTransport.ts:1332:        // Plain CHAT_MESSAGE
+lib/lib/mesh/useMeshTransport.ts:1335:          type: "CHAT_MESSAGE",
+lib/lib/mesh/useMeshTransport.ts:1342:          priority: packetPriority("CHAT_MESSAGE", myNodeId),
+lib/lib/mesh/useMeshTransport.ts:1361:            chatId: msg.senderId,
+lib/lib/mesh/useMeshTransport.ts:1457:  const sendMessage = useCallback(
+lib/lib/mesh/useMeshTransport.ts:1466:        type: "CHAT_MESSAGE",
+lib/lib/mesh/useMeshTransport.ts:1475:        priority: packetPriority("CHAT_MESSAGE", toNode),
+lib/lib/mesh/useMeshTransport.ts:1609:   * pre-empts queued chat traffic and gets routed via the fastest available path.
+lib/lib/mesh/useMeshTransport.ts:1615:      // without adding a raw JSON bubble to the chat.
+lib/lib/mesh/useMeshTransport.ts:1664:  return { sendMessage, sendReadAck, sendCallInvite };
+lib/lib/screen-registry.ts:16:  { name: "Chat",            route: "/chat",               status: "implemented" },
+lib/mesh/useMeshTransport.ts:5:    sendMessage: async () => false,
+lib/mesh/meshMessageStore.ts:26:export function chatMessageToStored(message: any): StoredMeshMessage {
+lib/store/meshStore.ts:13:    sendMessage: () => {},
+lib/mauri-mesh-engine/src/validate.ts:31:  const direct = await engine.sendMessage("phone-b", {
+lib/mauri-mesh-engine/src/validate.ts:36:  const relayOrStore = await engine.sendMessage("phone-z", {
+lib/mauri-mesh-engine/src/mauriMeshP2PEngine.ts:75:  async sendMessage(
+lib/mauri-mesh-engine/dist/mauriMeshP2PEngine.d.ts:29:    sendMessage(to: string, payload: unknown, from?: string): Promise<{
+lib/packet-engine/src/schema.ts:9: * message          — user chat / data payload
+lib/packet-engine/src/schema.ts:137:  message:           "User-originated chat or data payload. ackRequired = true.",
+lib/packet-engine/dist/schema.d.ts:7: * message          — user chat / data payload
+src/lib/inventionEngineClient.ts:22:export async function sendMessageThroughInventionEngine(body: string): Promise<UiEngineSnapshot> {
+src/lib/mauriEssentials.ts:89:    enhances: "Makes MauriMesh a coordination protocol, not only a chat app.",
+src/lib/uiBackupRoutes.ts:4:  | "chat"
+src/lib/uiBackupRoutes.ts:54:    key: "chat",
+src/lib/uiBackupRoutes.ts:56:    route: "/chat",
+src/components/ChatBubble.tsx:5:export function ChatBubble({
+src/operating/mauri155LayerCatalog.ts:28:    "login, dashboard, chat, settings, add friend, pixel calling shell, and human control surface",
+src/maurimesh/system-brain/buttonDecisionRouter.ts:49:    targetRoute: "/chat",
+src/maurimesh/test-layer/MauriMeshFullTestEngine.ts:11:  "/chat",
+src/maurimesh/test-layer/MauriMeshFullTestEngine.ts:60:    "All required events are present in APK/logcat proof with matching messageId and routeId.",
+src/maurimesh/test-layer/MauriMeshFullTestEngine.ts:213:  const messageId = `msg-${Date.now()}`;
+src/maurimesh/test-layer/MauriMeshFullTestEngine.ts:222:      `Message envelope created with messageId=${messageId}.`,
+src/maurimesh/test-layer/MauriMeshFullTestEngine.ts:426:    "Pass only when messageId, routeId, and ACK hash match in captured logs.",
+src/maurimesh/full-mesh-test/GeneratedRouteRegistry.ts:63:    "route": "/chat",
+src/maurimesh/full-mesh-test/GeneratedRouteRegistry.ts:64:    "file": "app/chat.tsx",
+src/maurimesh/audit/buttonAuditRegistry.ts:47:    route: "/chat",
+src/maurimesh/audit/buttonAuditRegistry.ts:48:    auditId: "route_chat",

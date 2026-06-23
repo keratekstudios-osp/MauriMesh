@@ -252,6 +252,8 @@ class MeshCentralClient(
           @Suppress("DEPRECATION")
           characteristic.value = bytes
           @Suppress("DEPRECATION")
+          MauriMeshNativeBlePacketLogger.gattWrite(characteristic.value, "before writeCharacteristic MeshCentralClient.kt")
+          MauriMeshGattPacketProof.logGattPayload("GATT_CLIENT_WRITE_ATTEMPT", characteristic.value, "MeshCentralClient.kt before writeCharacteristic")
           gatt?.writeCharacteristic(characteristic) == true
         }
 

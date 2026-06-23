@@ -97,3 +97,7 @@ data/maurimesh/*.json
 # Android signing
 android/gradle.properties
 qa-results/
+
+# MauriMesh proof raw evidence can be large/private.
+# Keep manifests and locked ledgers in repo, but review raw evidence before pushing.
+# archives/maurimesh-locked-proof-vault/raw-evidence/*
