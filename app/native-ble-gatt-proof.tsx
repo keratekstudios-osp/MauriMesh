@@ -31,6 +31,11 @@ import {
   View,
   TextInput,
 } from "react-native";
+import {
+  sendRawPacketUtf8,
+  startRawPacketReceiver,
+  getRawPacketReceiverStatus,
+} from "../src/maurimesh/ble/rawPacketProofClient";
 
 // MM_GATT_JS_RESOLVER_V8B_BEGIN
 const getMauriMeshNativeGattModuleV8B = () => {
@@ -285,6 +290,62 @@ function GateButton({
   onPress: () => void | Promise<void>;
   tone?: "primary" | "secondary" | "danger" | "warning";
 }) {
+
+  const startRealGattReceiverFromTruthGate = useCallback(async () => {
+    logButtonPress("BUTTON_PRESS_START_REAL_GATT_RECEIVER", packetId);
+    try {
+      const result = await startRawPacketReceiver();
+      setRealGattResult(`RECEIVER_STARTED ${safeJson(result)}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STARTED packetId=${packetId} result=${safeJson(result)}`);
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`RECEIVER_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_ERROR packetId=${packetId} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId]);
+
+  const refreshRealGattReceiverStatusFromTruthGate = useCallback(async () => {
+    logButtonPress("BUTTON_PRESS_REFRESH_REAL_GATT_RECEIVER", packetId);
+    try {
+      const result = await getRawPacketReceiverStatus();
+      setRealGattResult(`RECEIVER_STATUS ${safeJson(result)}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STATUS packetId=${packetId} result=${safeJson(result)}`);
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`RECEIVER_STATUS_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STATUS_ERROR packetId=${packetId} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId]);
+
+  const sendRealGattPacketFromTruthGate = useCallback(async () => {
+    const target = realGattTargetAddress.trim();
+    logButtonPress("BUTTON_PRESS_SEND_REAL_GATT_PACKET", packetId);
+
+    if (!target) {
+      const message = "Target BLE address is required.";
+      setRealGattResult(`SEND_BLOCKED ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_BLOCKED packetId=${packetId} reason=${message}`);
+      return;
+    }
+
+    try {
+      const payload = `${packetId}|MAURIMESH_NATIVE_BLE_GATT_REAL_TRANSPORT|${nowIso()}`;
+      appendEvent(`${LOG_TAG} GATT_PACKET_PAYLOAD packetId=${packetId} payloadBytes=${payload.length} source=TruthGateRealGattSend`);
+
+      const ok = await sendRawPacketUtf8(target, payload);
+      setRealGattResult(`SEND_RESULT ok=${ok} target=${target}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_RESULT packetId=${packetId} target=${target} ok=${ok}`);
+
+      appendEvent(
+        `${LOG_TAG} TRUTH_NOTE packetId=${packetId} realTransportSendAttempted=true requiredNativeMarkers=GATT_PACKET_PAYLOAD,GATT_CLIENT_WRITE_ATTEMPT,GATT_SERVER_WRITE_RECEIVED`
+      );
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`SEND_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_ERROR packetId=${packetId} target=${target} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId, realGattTargetAddress]);
+
   return (
     <Pressable
       onPress={() => {
@@ -336,6 +397,9 @@ export default function NativeBleGattProofScreen() {
   
   // MM_GATT_SHARED_PACKET_V9_STATE
   const [sharedPacketIdInput, setSharedPacketIdInput] = useState("");
+  const [realGattTargetAddress, setRealGattTargetAddress] = useState("");
+  const [realGattResult, setRealGattResult] = useState("NOT_STARTED");
+
 const [scanActive, setScanActive] = useState(false);
   const [vaultSaved, setVaultSaved] = useState(false);
 
@@ -570,6 +634,62 @@ const [scanActive, setScanActive] = useState(false);
     }
   }, [appendEvent, logButtonPress, packetId]);
 
+
+  const startRealGattReceiverFromTruthGate = useCallback(async () => {
+    logButtonPress("BUTTON_PRESS_START_REAL_GATT_RECEIVER", packetId);
+    try {
+      const result = await startRawPacketReceiver();
+      setRealGattResult(`RECEIVER_STARTED ${safeJson(result)}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STARTED packetId=${packetId} result=${safeJson(result)}`);
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`RECEIVER_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_ERROR packetId=${packetId} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId]);
+
+  const refreshRealGattReceiverStatusFromTruthGate = useCallback(async () => {
+    logButtonPress("BUTTON_PRESS_REFRESH_REAL_GATT_RECEIVER", packetId);
+    try {
+      const result = await getRawPacketReceiverStatus();
+      setRealGattResult(`RECEIVER_STATUS ${safeJson(result)}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STATUS packetId=${packetId} result=${safeJson(result)}`);
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`RECEIVER_STATUS_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_RECEIVER_STATUS_ERROR packetId=${packetId} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId]);
+
+  const sendRealGattPacketFromTruthGate = useCallback(async () => {
+    const target = realGattTargetAddress.trim();
+    logButtonPress("BUTTON_PRESS_SEND_REAL_GATT_PACKET", packetId);
+
+    if (!target) {
+      const message = "Target BLE address is required.";
+      setRealGattResult(`SEND_BLOCKED ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_BLOCKED packetId=${packetId} reason=${message}`);
+      return;
+    }
+
+    try {
+      const payload = `${packetId}|MAURIMESH_NATIVE_BLE_GATT_REAL_TRANSPORT|${nowIso()}`;
+      appendEvent(`${LOG_TAG} GATT_PACKET_PAYLOAD packetId=${packetId} payloadBytes=${payload.length} source=TruthGateRealGattSend`);
+
+      const ok = await sendRawPacketUtf8(target, payload);
+      setRealGattResult(`SEND_RESULT ok=${ok} target=${target}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_RESULT packetId=${packetId} target=${target} ok=${ok}`);
+
+      appendEvent(
+        `${LOG_TAG} TRUTH_NOTE packetId=${packetId} realTransportSendAttempted=true requiredNativeMarkers=GATT_PACKET_PAYLOAD,GATT_CLIENT_WRITE_ATTEMPT,GATT_SERVER_WRITE_RECEIVED`
+      );
+    } catch (error) {
+      const message = safeError(error);
+      setRealGattResult(`SEND_ERROR ${message}`);
+      appendEvent(`${LOG_TAG} REAL_GATT_SEND_ERROR packetId=${packetId} target=${target} error=${message}`);
+    }
+  }, [appendEvent, logButtonPress, packetId, realGattTargetAddress]);
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -667,6 +787,33 @@ const [scanActive, setScanActive] = useState(false);
             <Text style={styles.buttonText}>Use Shared Packet ID</Text>
           </Pressable>
           <Text style={styles.mono}>SHARED_PACKET_V9_APPLIED</Text>
+        </View>
+
+
+        <View style={styles.card}>
+          <Text style={styles.h2}>Real GATT Transport Send</Text>
+          <Text style={styles.body}>
+            This uses MauriMeshBle.startRawPacketReceiver and MauriMeshBle.sendRawPacketUtf8.
+            It targets the real MeshCentralClient → writeCharacteristic → MeshRawPacketGattServer path.
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={realGattTargetAddress}
+            onChangeText={setRealGattTargetAddress}
+            placeholder="Target BLE address, e.g. AA:BB:CC:DD:EE:FF"
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
+          <Pressable style={styles.button} onPress={startRealGattReceiverFromTruthGate}>
+            <Text style={styles.buttonText}>Start Raw Packet Receiver</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={refreshRealGattReceiverStatusFromTruthGate}>
+            <Text style={styles.buttonText}>Refresh Receiver Status</Text>
+          </Pressable>
+          <Pressable style={styles.button} onPress={sendRealGattPacketFromTruthGate}>
+            <Text style={styles.buttonText}>Send Real GATT Packet</Text>
+          </Pressable>
+          <Text style={styles.mono}>Result: {realGattResult}</Text>
         </View>
 
 <GateButton
