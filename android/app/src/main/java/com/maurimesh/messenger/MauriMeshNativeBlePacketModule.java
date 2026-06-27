@@ -91,10 +91,15 @@ String detail = event.hasKey("detail") ? event.getString("detail") : "NO_DETAIL"
     String helperResult = tryCallMauriMeshGattPacketProofHelper(cleanPacketId);
     result.putString("helperResult", helperResult);
 
-    Log.i(
-      "MAURIMESH_NATIVE_BLE_GATT",
-      "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
     );
+
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_WRITE_PATH_NOT_REACHED | packetId=" + cleanPacketId + " | reason=bridge_method_entered_only_real_gatt_markers_must_come_from_transport | finalPassClaimed=false"
+      );
 
     promise.resolve(result);
   }

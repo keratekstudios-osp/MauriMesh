@@ -1,3 +1,25 @@
+
+/*
+  Native BLE/GATT Exam Lights v2
+  Required truth rule:
+  FINAL PASS only when same packetId has:
+  GATT_PACKET_PAYLOAD + GATT_CLIENT_WRITE_ATTEMPT + GATT_SERVER_WRITE_RECEIVED
+*/
+
+const EXAM_LIGHTS_V2 = [
+  "BUTTON_PRESS_START_CAPTURE",
+  "SHARED_PACKET_V9_APPLIED",
+  "BUTTON_PRESS_NATIVE_GATT_TRIGGER",
+  "nativeMethodEntered=true",
+  "GATT_PACKET_PAYLOAD",
+  "GATT_CLIENT_WRITE_ATTEMPT",
+  "GATT_SERVER_WRITE_RECEIVED",
+  "VAULT_SAVE_ATTEMPT saved=true",
+];
+
+const NATIVE_GATT_FINAL_RULE_V2 =
+  "PASS_READY_TO_LOCK requires same packetId GATT_PACKET_PAYLOAD + GATT_CLIENT_WRITE_ATTEMPT + GATT_SERVER_WRITE_RECEIVED";
+
 import React, { useCallback, useState } from "react";
 import {
   NativeModules,
@@ -280,6 +302,33 @@ function GateButton({
       <Text style={styles.buttonText}>{title}</Text>
     </Pressable>
   );
+}
+
+
+const EXAM_LIGHTS = [
+  { key: "START_CAPTURE", label: "Start Capture", marker: "BUTTON_PRESS_START_CAPTURE", tone: "blue" },
+  { key: "SHARED_PACKET", label: "Shared Packet", marker: "SHARED_PACKET_V9_APPLIED", tone: "green" },
+  { key: "NATIVE_TRIGGER", label: "Native Trigger", marker: "BUTTON_PRESS_NATIVE_GATT_TRIGGER", tone: "blue" },
+  { key: "NATIVE_METHOD_ENTERED", label: "Native Method Entered", marker: "nativeMethodEntered=true", tone: "green" },
+  { key: "GATT_PAYLOAD", label: "GATT Payload", marker: "GATT_PACKET_PAYLOAD", tone: "green" },
+  { key: "CLIENT_WRITE", label: "Client Write", marker: "GATT_CLIENT_WRITE_ATTEMPT", tone: "green" },
+  { key: "SERVER_RECEIVED", label: "Server Received", marker: "GATT_SERVER_WRITE_RECEIVED", tone: "green" },
+  { key: "VAULT_SAVED", label: "Vault Saved", marker: "VAULT_SAVE_ATTEMPT saved=true", tone: "green" },
+];
+
+function hasMarker(events: string[], marker: string) {
+  return events.some((line) => line.includes(marker));
+}
+
+function hasSamePacketMarker(events: string[], packetId: string, marker: string) {
+  return events.some((line) => line.includes(packetId) && line.includes(marker));
+}
+
+function examLightColor(passed: boolean, tone: string) {
+  if (!passed) return "#2b2b2b";
+  if (tone === "blue") return "#38BDF8";
+  if (tone === "gold") return "#F59E0B";
+  return "#22C55E";
 }
 
 export default function NativeBleGattProofScreen() {
@@ -654,6 +703,71 @@ const [scanActive, setScanActive] = useState(false);
 }
 
 const styles = StyleSheet.create({
+
+  examPanel: {
+    borderWidth: 1,
+    borderColor: "#14532D",
+    backgroundColor: "rgba(0, 30, 18, 0.82)",
+    borderRadius: 18,
+    padding: 14,
+    marginVertical: 12,
+    gap: 10,
+  },
+  examTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "900",
+    marginBottom: 4,
+  },
+  examLightRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.08)",
+    paddingBottom: 8,
+  },
+  examFinalBox: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#92400E",
+    borderRadius: 14,
+    padding: 10,
+    backgroundColor: "rgba(120,53,15,0.18)",
+  },
+  examLightDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.45)",
+  },
+  examLightTextWrap: {
+    flex: 1,
+  },
+  examLightLabel: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  examLightMarker: {
+    color: "#38BDF8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  examPass: {
+    color: "#22C55E",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  examWaiting: {
+    color: "#F59E0B",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
   input: {
     borderWidth: 1,
     borderColor: "#4b5563",
