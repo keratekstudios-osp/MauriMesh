@@ -1,0 +1,7 @@
+advertise_start_packetId=MISSING_ACTUAL_USAGE
+scan_result_packetId=MISSING_ACTUAL_USAGE
+gatt_write_packetId=WIRED
+gatt_read_packetId=MISSING_ACTUAL_USAGE
+characteristic_changed_packetId=MISSING_ACTUAL_USAGE
+relay_packetId=MISSING_ACTUAL_USAGE
+ack_packetId=WIRED

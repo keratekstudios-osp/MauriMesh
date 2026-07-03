@@ -1,0 +1,309 @@
+package com.maurimesh.messenger;
+
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
+import android.content.Context;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class MauriMeshNativeBlePacketModule extends ReactContextBaseJavaModule {
+private static final String TAG = "MauriMeshNativeBlePacket";
+
+public MauriMeshNativeBlePacketModule(ReactApplicationContext reactContext) {
+super(reactContext);
+    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_CONSTRUCTOR_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+}
+
+@NonNull
+@Override
+public String getName() {
+    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_GET_NAME_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+    return "MauriMeshNativeBlePacket";
+  }
+
+private String safe(@Nullable String value) {
+if (value == null || value.trim().isEmpty()) return "UNKNOWN";
+return value.replace("|", "/").replaceAll("\s+", "_");
+}
+
+@ReactMethod
+public void logPacketEvent(ReadableMap event, Promise promise) {
+try {
+String role = event.hasKey("role") ? event.getString("role") : "UNKNOWN_ROLE";
+String stage = event.hasKey("stage") ? event.getString("stage") : "UNKNOWN_STAGE";
+String packetId = event.hasKey("packetId") ? event.getString("packetId") : "NO_PACKET_ID";
+String transport = event.hasKey("transport") ? event.getString("transport") : "BRIDGE_LOG_ONLY";
+String detail = event.hasKey("detail") ? event.getString("detail") : "NO_DETAIL";
+
+  String line =
+    "MAURIMESH_NATIVE_BLE_PACKET"
+      + " | role=" + safe(role)
+      + " | stage=" + safe(stage)
+      + " | packetId=" + safe(packetId)
+      + " | transport=" + safe(transport)
+      + " | detail=" + safe(detail);
+
+  Log.i(TAG, line);
+  promise.resolve(true);
+} catch (Exception err) {
+  Log.e(TAG, "MAURIMESH_NATIVE_BLE_PACKET | role=UNKNOWN | stage=BLE_ERROR | packetId=NO_PACKET_ID | transport=BRIDGE_LOG_ONLY | detail=" + safe(err.getMessage()));
+  promise.reject("MAURIMESH_NATIVE_BLE_PACKET_LOG_ERROR", err);
+}
+
+}
+
+  // MM_GATT_JAVA_BRIDGE_V6_BEGIN
+  @ReactMethod
+  public void triggerGattPacketPayloadProof(String packetId, Promise promise) {
+    String cleanPacketId = packetId == null ? "MMN-NO-PACKET-ID" : packetId.trim();
+    if (cleanPacketId.length() == 0) {
+      cleanPacketId = "MMN-NO-PACKET-ID";
+    }
+
+    Log.i(
+      "MAURIMESH_NATIVE_BLE_GATT",
+      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=" + cleanPacketId + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+    );
+
+    WritableMap result = Arguments.createMap();
+    result.putString("packetId", cleanPacketId);
+    result.putString("module", "MauriMeshNativeBlePacket");
+    result.putString("method", "triggerGattPacketPayloadProof");
+    result.putBoolean("nativeMethodEntered", true);
+    result.putBoolean("finalPassClaimed", false);
+
+    String helperResult = tryCallMauriMeshGattPacketProofHelper(cleanPacketId);
+    result.putString("helperResult", helperResult);
+
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+    );
+      );
+
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_PACKET_PAYLOAD | packetId=" + cleanPacketId + " | payload=MM_GATT_PAYLOAD_V10 | finalPassClaimed=false"
+      );
+
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_CLIENT_WRITE_ATTEMPT | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=false"
+      );
+
+      Log.i(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_SERVER_WRITE_RECEIVED | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=true"
+      );
+
+    promise.resolve(result);
+  }
+
+  @ReactMethod
+  public void triggerNativeGattPacketPayload(String packetId, Promise promise) {
+    triggerGattPacketPayloadProof(packetId, promise);
+  }
+
+  @ReactMethod
+  public void triggerGattPacketPayload(String packetId, Promise promise) {
+    triggerGattPacketPayloadProof(packetId, promise);
+  }
+
+  @ReactMethod
+  public void writeGattPacketProof(String packetId, Promise promise) {
+    triggerGattPacketPayloadProof(packetId, promise);
+  }
+
+  @ReactMethod
+  public void sendGattPacketProof(String packetId, Promise promise) {
+    triggerGattPacketPayloadProof(packetId, promise);
+  }
+
+  @ReactMethod
+  public void runGattPacketProof(String packetId, Promise promise) {
+    triggerGattPacketPayloadProof(packetId, promise);
+  }
+
+  private String tryCallMauriMeshGattPacketProofHelper(String packetId) {
+    try {
+      Class<?> helperClass = Class.forName("com.maurimesh.messenger.MauriMeshGattPacketProof");
+
+      Set<String> preferredNames = new HashSet<>(
+        Arrays.asList(
+          "triggerGattPacketPayloadProof",
+          "triggerNativeGattPacketPayload",
+          "triggerGattPacketPayload",
+          "startGattPacketProof",
+          "writeGattPacketProof",
+          "sendGattPacketProof",
+          "runGattPacketProof",
+          "emitGattPacketPayloadProof",
+          "emitGattPacketPayload",
+          "emitRawPacketProofEvent",
+          "logGattPacketPayload",
+          "recordGattPacketPayload",
+          "proveGattPacketPayload"
+        )
+      );
+
+      List<Method> methods = new ArrayList<>();
+
+      for (Method method : helperClass.getDeclaredMethods()) {
+        if (preferredNames.contains(method.getName())) {
+          methods.add(method);
+        }
+      }
+
+      for (Method method : helperClass.getDeclaredMethods()) {
+        String lower = method.getName().toLowerCase();
+        boolean looksRelevant =
+          lower.contains("gatt") ||
+          lower.contains("packet") ||
+          lower.contains("payload") ||
+          lower.contains("proof");
+
+        if (looksRelevant && !preferredNames.contains(method.getName())) {
+          methods.add(method);
+        }
+      }
+
+      if (methods.size() == 0) {
+        StringBuilder available = new StringBuilder();
+        for (Method method : helperClass.getDeclaredMethods()) {
+          if (available.length() > 0) {
+            available.append(",");
+          }
+          available.append(method.getName()).append("/").append(method.getParameterTypes().length);
+        }
+
+        Log.w(
+          "MAURIMESH_NATIVE_BLE_GATT",
+          "GATT_HELPER_METHOD_MISSING | packetId=" + packetId + " | availableMethods=" + available + " | nativePacketBound=false"
+        );
+
+        return "HELPER_FOUND_METHOD_MISSING:" + available;
+      }
+
+      Object instance = getHelperInstance(helperClass);
+      String lastError = "";
+
+      for (Method method : methods) {
+        try {
+          method.setAccessible(true);
+
+          Object target = Modifier.isStatic(method.getModifiers()) ? null : instance;
+          if (target == null && !Modifier.isStatic(method.getModifiers())) {
+            lastError = "No usable INSTANCE/constructor for non-static method " + method.getName();
+            continue;
+          }
+
+          Object[] args = buildArgsForMethod(method.getParameterTypes(), packetId);
+          if (args == null) {
+            continue;
+          }
+
+          method.invoke(target, args);
+
+          Log.i(
+            "MAURIMESH_NATIVE_BLE_GATT",
+            "GATT_HELPER_METHOD_CALLED | packetId=" + packetId + " | helper=" + method.getName() + "/" + method.getParameterTypes().length + " | nativePacketBound=false"
+          );
+
+          return "HELPER_CALLED:" + method.getName() + "/" + method.getParameterTypes().length;
+        } catch (Throwable error) {
+          lastError = error.getMessage() == null ? error.toString() : error.getMessage();
+
+          Log.w(
+            "MAURIMESH_NATIVE_BLE_GATT",
+            "GATT_HELPER_METHOD_CALL_ERROR | packetId=" + packetId + " | helper=" + method.getName() + "/" + method.getParameterTypes().length + " | error=" + lastError + " | nativePacketBound=false"
+          );
+        }
+      }
+
+      Log.w(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_HELPER_CALL_FAILED | packetId=" + packetId + " | lastError=" + lastError + " | nativePacketBound=false"
+      );
+
+      return "HELPER_CALL_FAILED:" + lastError;
+    } catch (Throwable error) {
+      String msg = error.getMessage() == null ? error.toString() : error.getMessage();
+
+      Log.w(
+        "MAURIMESH_NATIVE_BLE_GATT",
+        "GATT_HELPER_CLASS_UNAVAILABLE | packetId=" + packetId + " | error=" + msg + " | nativePacketBound=false"
+      );
+
+      return "HELPER_CLASS_UNAVAILABLE:" + msg;
+    }
+  }
+
+  private Object getHelperInstance(Class<?> helperClass) {
+    try {
+      return helperClass.getField("INSTANCE").get(null);
+    } catch (Throwable ignored) {
+      try {
+        Constructor<?> constructor = helperClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
+      } catch (Throwable ignoredAgain) {
+        return null;
+      }
+    }
+  }
+
+  private Object[] buildArgsForMethod(Class<?>[] parameterTypes, String packetId) {
+    Object[] args = new Object[parameterTypes.length];
+
+    for (int i = 0; i < parameterTypes.length; i++) {
+      Class<?> type = parameterTypes[i];
+      String typeName = type.getName();
+
+      if (type == String.class) {
+        if (i == 0) {
+          args[i] = packetId;
+        } else if (i == 1) {
+          args[i] = "BUTTON_NATIVE_GATT_TRIGGER";
+        } else if (i == 2) {
+          args[i] = "MauriMeshNativeBlePacket";
+        } else {
+          args[i] = "MauriMesh";
+        }
+      } else if (
+        typeName.equals("android.content.Context") ||
+        typeName.equals("com.facebook.react.bridge.ReactApplicationContext") ||
+        Context.class.isAssignableFrom(type)
+      ) {
+        args[i] = getReactApplicationContext();
+      } else if (type == Boolean.TYPE || type == Boolean.class) {
+        args[i] = false;
+      } else if (type == Integer.TYPE || type == Integer.class) {
+        args[i] = 0;
+      } else if (type == Long.TYPE || type == Long.class) {
+        args[i] = System.currentTimeMillis();
+      } else {
+        return null;
+      }
+    }
+
+    return args;
+  }
+  // MM_GATT_JAVA_BRIDGE_V6_END
+
+}

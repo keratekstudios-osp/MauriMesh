@@ -1,0 +1,6 @@
+Patch ID: MM-BLEMODULE-ACK-LOGGER-REPAIR-20260614-021845
+Removed ACK logger lines: 3
+
+    MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+      MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+        MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")

@@ -1,0 +1,27 @@
+{
+  "project": "MauriMesh",
+  "packName": "MauriMesh Investor / Company Proof Pack",
+  "status": "READY_FOR_REVIEW",
+  "createdAt": "2026-06-13T17:02:20.483Z",
+  "sourceIndex": "docs/proof-index/MAURIMESH_MASTER_PROOF_INDEX.json",
+  "includedDocuments": [
+    "docs/investor-proof-pack/README.md",
+    "docs/investor-proof-pack/MAURIMESH_INVESTOR_PROOF_PACK.md",
+    "docs/investor-proof-pack/MAURIMESH_DUE_DILIGENCE_SUMMARY.md",
+    "docs/investor-proof-pack/MAURIMESH_TECHNICAL_PROOF_SUMMARY.md",
+    "docs/investor-proof-pack/MAURIMESH_PROOF_LIMITS_AND_NEXT_STEPS.md",
+    "docs/proof-index/MAURIMESH_MASTER_PROOF_INDEX.md",
+    "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_certificate.md",
+    "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_hash_manifest.md",
+    "docs/investor-proof-pack/MAURIMESH_ONE_PAGE_EXECUTIVE_SUMMARY.md",
+    "docs/investor-proof-pack/MAURIMESH_ONE_PAGE_EXECUTIVE_SUMMARY.txt"
+  ],
+  "verificationCommands": [
+    "node tools/proof-verifiers/verify-store-forward-proof.js",
+    "node tools/proof-verifiers/verify-store-forward-hash-manifest.js",
+    "node tools/proof-verifiers/verify-maurimesh-master-proof-index.js",
+    "node tools/proof-verifiers/verify-maurimesh-investor-proof-pack.js"
+  ],
+  "proofBoundary": "This pack proves internal app-level proof records, archived logs, external project-side verification, and hash-manifest integrity. It does not claim independent third-party certification or RF-layer laboratory certification.",
+  "updatedAt": "2026-06-13T17:04:03.169Z"
+}

@@ -1,0 +1,6 @@
+MAURIMESH GITHUB REMOTE OWNER TEST
+
+Testing old remote:
+https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git
+remote: Repository not found.
+fatal: repository 'https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git/' not found

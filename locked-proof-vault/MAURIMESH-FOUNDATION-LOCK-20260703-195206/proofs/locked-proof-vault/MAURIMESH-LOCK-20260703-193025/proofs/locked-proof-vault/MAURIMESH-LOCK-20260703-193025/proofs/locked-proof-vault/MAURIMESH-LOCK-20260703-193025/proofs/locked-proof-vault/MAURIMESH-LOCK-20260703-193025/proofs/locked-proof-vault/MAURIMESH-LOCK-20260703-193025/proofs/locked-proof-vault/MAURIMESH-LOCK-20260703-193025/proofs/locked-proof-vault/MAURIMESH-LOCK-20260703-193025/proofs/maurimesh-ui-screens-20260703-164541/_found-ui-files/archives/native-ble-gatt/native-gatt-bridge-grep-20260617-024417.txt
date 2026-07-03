@@ -1,0 +1,11 @@
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:69:  // MM_GATT_BRIDGE_V4_BEGIN
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:71:  fun triggerGattPacketPayloadProof(packetId: String, promise: Promise) {
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:76:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=$cleanPacketId | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:82:    result.putString("method", "triggerGattPacketPayloadProof")
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:100:    triggerGattPacketPayloadProof(packetId, promise)
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:105:    triggerGattPacketPayloadProof(packetId, promise)
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:110:    triggerGattPacketPayloadProof(packetId, promise)
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:115:    triggerGattPacketPayloadProof(packetId, promise)
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:120:    triggerGattPacketPayloadProof(packetId, promise)
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:128:        "triggerGattPacketPayloadProof",
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:199:            "GATT_HELPER_METHOD_CALLED | packetId=$packetId | helper=${method.name}/${method.parameterTypes.size} | nativePacketBound=false"

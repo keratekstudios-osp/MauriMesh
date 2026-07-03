@@ -1,0 +1,33 @@
+{
+  "project": "MauriMesh",
+  "document": "Sanitized Public Proof Summary",
+  "milestone": "Store-Forward Proof",
+  "publicVerdict": "PASS",
+  "privatePacketId": "MMSF-RAW-LIVE-001",
+  "publicPacketIdPolicy": "withheld_from_public_summary_except_internal_index",
+  "proofBranch": "proof-checkpoint/MMSF-RAW-LIVE-001",
+  "proofTag": "proof/store-forward-raw-device-MMSF-RAW-LIVE-001",
+  "proofCommit": "6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86",
+  "remoteMainTouched": false,
+  "publicReleasePublished": false,
+  "draftReleasePrepared": true,
+  "publicBoundary": {
+    "rawEvidenceArchive": "withheld",
+    "rawEvidenceHash": "withheld",
+    "privatePaths": "withheld",
+    "verifierInternals": "withheld",
+    "implementationDetails": "limited"
+  },
+  "checks": {
+    "appLevelProof": "PASS",
+    "rawDeviceEvidenceCapture": "PASS",
+    "localEvidenceArchive": "PASS",
+    "proofIndex": "PASS",
+    "companyReviewPack": "PASS",
+    "localGitCheckpoint": "PASS",
+    "githubProofBranch": "PASS",
+    "githubProofTag": "PASS",
+    "draftReleasePrepared": "PASS",
+    "publicReleasePublished": "NOT_PUBLISHED"
+  }
+}

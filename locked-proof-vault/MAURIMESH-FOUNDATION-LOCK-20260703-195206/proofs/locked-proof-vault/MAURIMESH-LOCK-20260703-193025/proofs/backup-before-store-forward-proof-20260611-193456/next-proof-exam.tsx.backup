@@ -1,0 +1,66 @@
+import React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { NEXT_PROOF_EXAM } from "../src/maurimesh/proof/ble3DeviceProof";
+
+export default function NextProofExamScreen() {
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.kicker}>MAURIMESH NEXT TEST</Text>
+      <Text style={styles.title}>{NEXT_PROOF_EXAM.title}</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Status</Text>
+        <Text style={styles.body}>{NEXT_PROOF_EXAM.status}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Goal</Text>
+        <Text style={styles.body}>{NEXT_PROOF_EXAM.goal}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Path</Text>
+        <Text style={styles.path}>{NEXT_PROOF_EXAM.path}</Text>
+      </View>
+
+      <View style={styles.truthCard}>
+        <Text style={styles.truthTitle}>PASS Rule</Text>
+        <Text style={styles.body}>{NEXT_PROOF_EXAM.passRule}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Why this is next</Text>
+        <Text style={styles.body}>
+          3-device proof proves live relay path. Store-forward proof proves MauriMesh can survive temporary disconnection and complete delivery after rediscovery.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#020403" },
+  content: { padding: 18, paddingBottom: 48, gap: 14 },
+  kicker: { color: "#38BDF8", fontWeight: "900", letterSpacing: 2, fontSize: 12 },
+  title: { color: "white", fontSize: 30, fontWeight: "900" },
+  card: {
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.35)",
+    backgroundColor: "rgba(2,12,20,0.88)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 8,
+  },
+  truthCard: {
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.6)",
+    backgroundColor: "rgba(245,158,11,0.12)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 8,
+  },
+  cardTitle: { color: "white", fontSize: 18, fontWeight: "900" },
+  truthTitle: { color: "#F59E0B", fontSize: 18, fontWeight: "900" },
+  body: { color: "rgba(255,255,255,0.8)", lineHeight: 21 },
+  path: { color: "#38BDF8", fontWeight: "900", lineHeight: 22 },
+});

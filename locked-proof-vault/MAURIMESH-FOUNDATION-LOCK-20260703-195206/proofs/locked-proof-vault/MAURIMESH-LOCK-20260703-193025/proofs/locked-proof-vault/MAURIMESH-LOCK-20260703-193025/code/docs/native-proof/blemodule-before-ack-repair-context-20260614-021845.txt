@@ -1,0 +1,188 @@
+File: /home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshBleModule.kt
+Generated: 2026-06-14T02:18:45Z
+
+Lines 240-420 before repair:
+      promise.resolve(successCount)
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_BROADCAST_RAW_PACKET_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun getRawPacketPeerCount(promise: Promise) {
+    try {
+      promise.resolve(centralClient.getRawPacketPeerCount())
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_RAW_PACKET_PEER_COUNT_ERROR", error)
+    }
+  }
+
+
+
+
+  // TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A
+  @ReactMethod
+  fun startRawPacketReceiver(promise: Promise) {
+    try {
+      if (rawPacketGattServer == null) {
+        rawPacketGattServer = MeshRawPacketGattServer(reactContext) { event ->
+          centralClient.cachePeerAddress(event.fromAddress, "ack-peer", null)
+
+          val rxPacketId = extractPacketIdFromBytes(event.bytes)
+          emitRawPacketProofEvent(
+            "rx_packet",
+            rxPacketId,
+            event.fromAddress,
+            event.bytes.size,
+            true,
+            "RX_RAW_PACKET"
+          )
+
+                    val ackText =
+            "MAURIMESH_ACK|from=${event.fromAddress}|bytes=${event.bytes.size}|at=${event.receivedAtMs}"
+          val ackBytes = ackText.toByteArray(Charsets.UTF_8)
+
+          val ackSent = centralClient.sendRawPacket(event.fromAddress, ackBytes)
+
+          emitRawPacketProofEvent(
+            "ack_sent",
+            rxPacketId,
+            event.fromAddress,
+            ackBytes.size,
+            ackSent,
+            if (ackSent) "ACK_SENT=true" else "ACK_SENT=false"
+          )
+
+                    if (ackSent) {
+            rawPacketAckCount += 1
+            rawPacketLastAckTarget = event.fromAddress
+            rawPacketLastAckSentAtMs = System.currentTimeMillis()
+          }
+
+          android.util.Log.i(
+            "MauriMeshBle",
+            "[TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A] RX=${event.bytes.size} ACK_SENT=$ackSent target=${event.fromAddress}"
+          )
+        }
+      }
+
+      val ok = rawPacketGattServer?.start() == true
+      promise.resolve(rawPacketReceiverStatusMap(ok))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_START_RAW_PACKET_RECEIVER_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun stopRawPacketReceiver(promise: Promise) {
+    try {
+      val ok = rawPacketGattServer?.stop() ?: true
+      promise.resolve(rawPacketReceiverStatusMap(ok))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_STOP_RAW_PACKET_RECEIVER_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun getRawPacketReceiverStatus(promise: Promise) {
+    try {
+      promise.resolve(rawPacketReceiverStatusMap(true))
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_RAW_PACKET_RECEIVER_STATUS_ERROR", error)
+    }
+  }
+
+  @ReactMethod
+  fun sendRawPacketUtf8(nodeId: String, text: String, promise: Promise) {
+    try {
+      val ok = centralClient.sendRawPacket(nodeId, text.toByteArray(Charsets.UTF_8))
+      promise.resolve(ok)
+    } catch (error: Throwable) {
+      promise.reject("MAURIMESH_SEND_RAW_PACKET_UTF8_ERROR", error)
+    }
+  }
+
+  private fun rawPacketReceiverStatusMap(ok: Boolean): WritableMap {
+    val map = Arguments.createMap()
+    val status = rawPacketGattServer?.getStatusMap() ?: emptyMap<String, Any?>()
+
+    map.putBoolean("ok", ok)
+    map.putString("marker", "TASK_165B_RAW_PACKET_RECEIVER_BRIDGE_20260608_A")
+    map.putString("serverMarker", status["marker"] as? String ?: "not_started")
+    map.putBoolean("running", status["running"] as? Boolean ?: false)
+    map.putInt("receivedCount", status["receivedCount"] as? Int ?: 0)
+    map.putString("lastFromAddress", status["lastFromAddress"] as? String)
+    map.putInt("lastPacketSize", status["lastPacketSize"] as? Int ?: 0)
+    map.putDouble("lastReceivedAtMs", ((status["lastReceivedAtMs"] as? Long) ?: 0L).toDouble())
+    map.putString("lastError", status["lastError"] as? String)
+    map.putString("serviceUuid", status["serviceUuid"] as? String)
+    map.putString("characteristicUuid", status["characteristicUuid"] as? String)
+    map.putInt("ackCount", rawPacketAckCount)
+    map.putString("lastAckTarget", rawPacketLastAckTarget)
+    map.putDouble("lastAckSentAtMs", rawPacketLastAckSentAtMs.toDouble())
+    map.putInt("peerCount", centralClient.getRawPacketPeerCount())
+
+    return map
+  }
+
+
+
+
+  // TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A
+  private fun emitRawPacketProofEvent(
+    eventType: String,
+    MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+    packetId: String,
+    peerAddress: String,
+    payloadBytes: Int,
+    ok: Boolean,
+    detail: String?
+  ) {
+    try {
+      val map = Arguments.createMap()
+      map.putString("marker", "TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A")
+      map.putString("type", eventType)
+      MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+      map.putString("packetId", packetId)
+      map.putString("peerAddress", peerAddress)
+      map.putInt("payloadBytes", payloadBytes)
+      map.putBoolean("ok", ok)
+      map.putDouble("at", System.currentTimeMillis().toDouble())
+      map.putString("transport", "BLE")
+      map.putString("detail", detail)
+
+      reactContext
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit("MauriMeshRawPacketProofEvent", map)
+
+      android.util.Log.i(
+        "MauriMeshBle",
+        MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+        "[TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A] event=$eventType packetId=$packetId peer=$peerAddress ok=$ok bytes=$payloadBytes"
+      )
+    } catch (error: Throwable) {
+      android.util.Log.e(
+        "MauriMeshBle",
+        "[TASK_192_NATIVE_PROOF_EVENT_EMITTER_20260608_A] emit failed: ${error.message ?: error.toString()}"
+      )
+    }
+  }
+
+  private fun extractPacketIdFromBytes(bytes: ByteArray): String {
+    return try {
+      val text = bytes.toString(Charsets.UTF_8)
+      val first = text.split("|").firstOrNull()?.trim()
+      if (!first.isNullOrBlank() && first.length <= 128) first
+      else "MM-RX-${System.currentTimeMillis()}"
+    } catch (_: Throwable) {
+      "MM-RX-${System.currentTimeMillis()}"
+    }
+  }
+
+
+}
+
+Logger lines before repair:
+369:    MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+380:      MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")
+395:        MauriMeshNativeBlePacketLogger.ack(packetId, "ack packetId nearby MauriMeshBleModule.kt")

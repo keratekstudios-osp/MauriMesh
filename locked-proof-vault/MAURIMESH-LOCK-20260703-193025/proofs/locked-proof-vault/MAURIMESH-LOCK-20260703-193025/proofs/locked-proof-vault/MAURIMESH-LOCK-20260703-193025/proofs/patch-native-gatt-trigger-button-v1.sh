@@ -1,0 +1,644 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo ""
+echo "============================================================"
+echo "PATCH NATIVE GATT TRIGGER BUTTON v1"
+echo "============================================================"
+echo "Goal:"
+echo "- Keep Native BLE callback proof screen"
+echo "- Add direct Trigger Native GATT Packet Candidate button"
+echo "- Try available NativeModules safely"
+echo "- Do NOT claim final native BLE/GATT PASS"
+echo "- TypeScript + Expo export gate"
+echo "============================================================"
+
+ROOT="$(pwd)"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+PATCH_ID="MM-NATIVE-GATT-TRIGGER-$STAMP"
+BACKUP="$ROOT/backup-before-native-gatt-trigger-button-$STAMP"
+OUT="$ROOT/docs/native-ble-gatt"
+ARCHIVE="$ROOT/archives"
+
+mkdir -p "$BACKUP" "$OUT" "$ARCHIVE"
+
+TARGET="$ROOT/app/native-ble-gatt-proof.tsx"
+REPORT="$OUT/NATIVE_GATT_TRIGGER_BUTTON_V1_$STAMP.md"
+TSC_LOG="$OUT/NATIVE_GATT_TRIGGER_BUTTON_TSC_$STAMP.log"
+EXPORT_LOG="$OUT/NATIVE_GATT_TRIGGER_BUTTON_EXPORT_$STAMP.log"
+
+if [ ! -f "$TARGET" ]; then
+  echo "FAIL: missing $TARGET"
+  exit 1
+fi
+
+cp "$TARGET" "$BACKUP/native-ble-gatt-proof.tsx.backup"
+
+cat > "$TARGET" <<'TSX'
+import React, { useMemo, useRef, useState } from "react";
+import {
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { BleManager, Device } from "react-native-ble-plx";
+
+type TruthState = {
+  scanActive: boolean;
+  nativeCallbackSeen: boolean;
+  nativeGattTriggerRequested: boolean;
+  nativeGattMethodFound: boolean;
+  nativeGattMethodName: string;
+  vaultSaved: boolean;
+};
+
+type Marker = {
+  id: string;
+  at: string;
+  line: string;
+};
+
+function makePacketId(): string {
+  const a = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const b = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `MMN-${a}-${b}`;
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function shortId(value?: string | null): string {
+  if (!value) return "unknown";
+  if (value.length <= 16) return value;
+  return `${value.slice(0, 8)}...${value.slice(-5)}`;
+}
+
+async function ensureBlePermissions(): Promise<boolean> {
+  if (Platform.OS !== "android") return true;
+
+  const sdk = Number(Platform.Version);
+
+  const permissions =
+    sdk >= 31
+      ? [
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        ]
+      : [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION];
+
+  const results = await PermissionsAndroid.requestMultiple(permissions);
+  return Object.values(results).every(
+    (value) => value === PermissionsAndroid.RESULTS.GRANTED
+  );
+}
+
+async function callNativeGattCandidate(
+  packetId: string,
+  append: (line: string) => void
+): Promise<{ found: boolean; methodName: string }> {
+  const payload = JSON.stringify({
+    type: "MAURIMESH_GATT_PACKET_CANDIDATE",
+    packetId,
+    from: "PHONE_A",
+    relay: "PHONE_B",
+    to: "PHONE_C",
+    createdAt: nowIso(),
+    truth: "candidate_only_final_pass_not_claimed",
+  });
+
+  const modules = NativeModules as Record<string, any>;
+
+  const moduleNames = [
+    "MauriMeshBleModule",
+    "MauriMeshNativeBlePacketModule",
+    "MauriMeshNativeBlePacket",
+    "MauriMeshGattProofBridge",
+    "MauriMeshGattModule",
+    "BleModule",
+    "NativeBleModule",
+  ];
+
+  const methodNames = [
+    "triggerGattPacketPayloadProof",
+    "triggerNativeGattPacketProof",
+    "sendGattPacket",
+    "writeGattPacket",
+    "sendRawGattPacket",
+    "sendPacket",
+    "writePacket",
+    "transmitPacket",
+    "startGattProof",
+  ];
+
+  append(
+    `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_REQUESTED | packetId=${packetId} | nativePacketBound=false`
+  );
+
+  for (const moduleName of moduleNames) {
+    const mod = modules[moduleName];
+    if (!mod) continue;
+
+    append(
+      `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_MODULE_FOUND | packetId=${packetId} | module=${moduleName} | nativePacketBound=false`
+    );
+
+    for (const methodName of methodNames) {
+      const fn = mod?.[methodName];
+
+      if (typeof fn !== "function") continue;
+
+      const fullName = `${moduleName}.${methodName}`;
+
+      append(
+        `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_NATIVE_METHOD_FOUND | packetId=${packetId} | method=${fullName} | nativePacketBound=false`
+      );
+
+      try {
+        await Promise.resolve(fn.call(mod, packetId, payload));
+        append(
+          `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_NATIVE_METHOD_CALLED | packetId=${packetId} | method=${fullName} | nativePacketBound=false`
+        );
+        return { found: true, methodName: fullName };
+      } catch (firstError) {
+        try {
+          await Promise.resolve(fn.call(mod, payload));
+          append(
+            `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_NATIVE_METHOD_CALLED_ONE_ARG | packetId=${packetId} | method=${fullName} | nativePacketBound=false`
+          );
+          return { found: true, methodName: fullName };
+        } catch (secondError) {
+          append(
+            `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_NATIVE_METHOD_FAILED | packetId=${packetId} | method=${fullName} | error=${String(
+              secondError
+            ).slice(0, 120)} | nativePacketBound=false`
+          );
+        }
+      }
+    }
+  }
+
+  append(
+    `MAURIMESH_NATIVE_BLE_GATT | GATT_TRIGGER_NATIVE_METHOD_MISSING | packetId=${packetId} | nativePacketBound=false`
+  );
+
+  return { found: false, methodName: "" };
+}
+
+export default function NativeBleGattProofScreen() {
+  const managerRef = useRef<BleManager | null>(null);
+  const [packetId, setPacketId] = useState(makePacketId());
+  const [markers, setMarkers] = useState<Marker[]>([]);
+  const [truth, setTruth] = useState<TruthState>({
+    scanActive: false,
+    nativeCallbackSeen: false,
+    nativeGattTriggerRequested: false,
+    nativeGattMethodFound: false,
+    nativeGattMethodName: "",
+    vaultSaved: false,
+  });
+
+  const markerCount = markers.length;
+
+  const appendMarker = (line: string) => {
+    console.log(line);
+    setMarkers((current) =>
+      [
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          at: nowIso(),
+          line,
+        },
+        ...current,
+      ].slice(0, 80)
+    );
+  };
+
+  const manager = useMemo(() => {
+    if (!managerRef.current) {
+      managerRef.current = new BleManager();
+    }
+    return managerRef.current;
+  }, []);
+
+  const startBleCallbackCapture = async () => {
+    const allowed = await ensureBlePermissions();
+
+    if (!allowed) {
+      appendMarker(
+        `MAURIMESH_NATIVE_BLE_GATT | BLE_PERMISSION_DENIED | packetId=${packetId} | nativePacketBound=false`
+      );
+      return;
+    }
+
+    setTruth((state) => ({ ...state, scanActive: true }));
+
+    appendMarker(
+      `MAURIMESH_NATIVE_BLE_GATT | BLE_SCAN_START | packetId=${packetId} | nativePacketBound=false`
+    );
+
+    manager.startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
+      if (error) {
+        appendMarker(
+          `MAURIMESH_NATIVE_BLE_GATT | BLE_SCAN_ERROR | packetId=${packetId} | error=${String(
+            error.message || error
+          ).slice(0, 120)} | nativePacketBound=false`
+        );
+        setTruth((state) => ({ ...state, scanActive: false }));
+        return;
+      }
+
+      if (!device) return;
+
+      const d = device as Device & { mtu?: number | null };
+
+      setTruth((state) => ({ ...state, nativeCallbackSeen: true }));
+
+      appendMarker(
+        `MAURIMESH_NATIVE_BLE_GATT | BLE_SCAN_CALLBACK_DEVICE | packetId=${packetId} | nativePacketBound=false | deviceId=${shortId(
+          d.id
+        )} | name=${d.name || "unknown"} | rssi=${d.rssi ?? "na"} | mtu=${
+          d.mtu ?? 23
+        }`
+      );
+    });
+  };
+
+  const stopCapture = () => {
+    try {
+      manager.stopDeviceScan();
+    } catch {
+      // no-op
+    }
+
+    setTruth((state) => ({ ...state, scanActive: false }));
+
+    appendMarker(
+      `MAURIMESH_NATIVE_BLE_GATT | BLE_SCAN_STOP | packetId=${packetId} | nativePacketBound=false`
+    );
+  };
+
+  const triggerNativeGattCandidate = async () => {
+    setTruth((state) => ({
+      ...state,
+      nativeGattTriggerRequested: true,
+      nativeGattMethodFound: false,
+      nativeGattMethodName: "",
+    }));
+
+    const result = await callNativeGattCandidate(packetId, appendMarker);
+
+    setTruth((state) => ({
+      ...state,
+      nativeGattMethodFound: result.found,
+      nativeGattMethodName: result.methodName,
+    }));
+  };
+
+  const saveAttemptIntoVault = () => {
+    setTruth((state) => ({ ...state, vaultSaved: true }));
+    appendMarker(
+      `MAURIMESH_NATIVE_BLE_GATT | VAULT_SAVE_ATTEMPT_LOCAL | packetId=${packetId} | markers=${markerCount} | nativePacketBound=false`
+    );
+  };
+
+  const resetPacket = () => {
+    stopCapture();
+    const next = makePacketId();
+    setPacketId(next);
+    setMarkers([]);
+    setTruth({
+      scanActive: false,
+      nativeCallbackSeen: false,
+      nativeGattTriggerRequested: false,
+      nativeGattMethodFound: false,
+      nativeGattMethodName: "",
+      vaultSaved: false,
+    });
+    console.log(
+      `MAURIMESH_NATIVE_BLE_GATT | PACKET_RESET | packetId=${next} | nativePacketBound=false`
+    );
+  };
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.kicker}>MAURIMESH NATIVE PROOF GATE</Text>
+      <Text style={styles.title}>Native BLE/GATT Truth Gate</Text>
+
+      <View style={styles.panel}>
+        <Text style={styles.label}>Packet ID</Text>
+        <Text style={styles.packet}>{packetId}</Text>
+        <Text style={styles.small}>
+          Same packetId must appear in APK workflow logs, ReactNativeJS logs,
+          and native BLE/GATT transport markers before final PASS can be claimed.
+        </Text>
+      </View>
+
+      <Pressable style={styles.primaryButton} onPress={startBleCallbackCapture}>
+        <Text style={styles.buttonText}>Start BLE Callback Capture</Text>
+      </Pressable>
+
+      <Pressable style={styles.primaryButtonAlt} onPress={triggerNativeGattCandidate}>
+        <Text style={styles.buttonText}>Trigger Native GATT Packet Candidate</Text>
+      </Pressable>
+
+      <Pressable style={styles.darkButton} onPress={stopCapture}>
+        <Text style={styles.buttonText}>Stop Capture</Text>
+      </Pressable>
+
+      <Pressable style={styles.darkButton} onPress={saveAttemptIntoVault}>
+        <Text style={styles.buttonText}>Save Attempt into Vault</Text>
+      </Pressable>
+
+      <Pressable style={styles.outlineButton} onPress={resetPacket}>
+        <Text style={styles.buttonText}>Reset Packet</Text>
+      </Pressable>
+
+      <View style={styles.truthPanel}>
+        <Text style={styles.panelTitle}>Truth State</Text>
+        <Text style={styles.truthLine}>Scan active: {truth.scanActive ? "YES" : "NO"}</Text>
+        <Text style={styles.truthLine}>
+          Native callback seen: {truth.nativeCallbackSeen ? "YES" : "NO"}
+        </Text>
+        <Text style={styles.truthLine}>
+          Native GATT trigger requested:{" "}
+          {truth.nativeGattTriggerRequested ? "YES" : "NO"}
+        </Text>
+        <Text style={styles.truthLine}>
+          Native GATT bridge method found:{" "}
+          {truth.nativeGattMethodFound ? "YES" : "NO"}
+        </Text>
+        {truth.nativeGattMethodName ? (
+          <Text style={styles.truthLine}>Method: {truth.nativeGattMethodName}</Text>
+        ) : null}
+        <Text style={styles.truthLine}>
+          Native BLE/GATT packet-bound PASS: NOT CLAIMED
+        </Text>
+        <Text style={styles.truthLine}>
+          Vault saved this attempt: {truth.vaultSaved ? "YES" : "NO"}
+        </Text>
+        <Text style={styles.warning}>
+          PASS requires packetId inside native BLE/GATT transport path. BLE scan
+          callbacks alone are not final transport proof.
+        </Text>
+      </View>
+
+      <View style={styles.rulePanel}>
+        <Text style={styles.panelTitle}>Required Final PASS Rule</Text>
+        <Text style={styles.small}>
+          PASS_NATIVE_PACKET_BOUND_BLE_GATT_PROOF is allowed only when the same
+          packetId appears across workflow logs, ReactNativeJS logs, and native
+          BLE/GATT transport markers from a physical-device path.
+        </Text>
+      </View>
+
+      <View style={styles.panel}>
+        <Text style={styles.panelTitle}>Markers</Text>
+        {markers.length === 0 ? (
+          <Text style={styles.small}>No markers yet.</Text>
+        ) : (
+          markers.map((marker) => (
+            <View key={marker.id} style={styles.marker}>
+              <Text style={styles.markerTime}>{marker.at}</Text>
+              <Text style={styles.markerText}>{marker.line}</Text>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#020403",
+  },
+  content: {
+    padding: 18,
+    paddingBottom: 48,
+  },
+  kicker: {
+    color: "#00D084",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "900",
+    marginBottom: 18,
+  },
+  panel: {
+    backgroundColor: "rgba(0, 64, 38, 0.42)",
+    borderColor: "rgba(0, 208, 132, 0.35)",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+  },
+  truthPanel: {
+    backgroundColor: "rgba(0, 82, 48, 0.55)",
+    borderColor: "rgba(0, 208, 132, 0.45)",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+  },
+  rulePanel: {
+    backgroundColor: "rgba(0, 38, 28, 0.72)",
+    borderColor: "rgba(0, 208, 132, 0.4)",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+  },
+  label: {
+    color: "rgba(255,255,255,0.66)",
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  packet: {
+    color: "#00D084",
+    fontSize: 19,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  small: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  warning: {
+    color: "#FBBF24",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 10,
+    fontWeight: "800",
+  },
+  panelTitle: {
+    color: "#00D084",
+    fontSize: 16,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  truthLine: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    lineHeight: 22,
+    fontWeight: "700",
+  },
+  primaryButton: {
+    backgroundColor: "#00D084",
+    borderRadius: 14,
+    padding: 15,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  primaryButtonAlt: {
+    backgroundColor: "#0EA5E9",
+    borderRadius: 14,
+    padding: 15,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  darkButton: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14,
+    padding: 15,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  outlineButton: {
+    backgroundColor: "transparent",
+    borderColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 15,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  marker: {
+    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopWidth: 1,
+    paddingTop: 10,
+    marginTop: 10,
+  },
+  markerTime: {
+    color: "rgba(255,255,255,0.42)",
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  markerText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "700",
+  },
+});
+TSX
+
+echo ""
+echo "Checking NativeModule method exposure in Android source..."
+grep -RInE "@ReactMethod|fun .*Gatt|fun .*Packet|void .*Gatt|void .*Packet|sendGatt|writeGatt|triggerGatt|sendPacket|writePacket" \
+  android/app/src/main/java/com/maurimesh/messenger 2>/dev/null \
+  > "$OUT/NATIVE_GATT_TRIGGER_METHOD_AUDIT_$STAMP.txt" || true
+
+echo ""
+echo "Running TypeScript..."
+if npx tsc --noEmit > "$TSC_LOG" 2>&1; then
+  TSC_RESULT="PASS"
+else
+  TSC_RESULT="FAIL"
+fi
+
+echo "TypeScript: $TSC_RESULT"
+
+echo ""
+echo "Running Expo Android export..."
+rm -rf dist-native-gatt-trigger-v1 2>/dev/null || true
+
+if npx expo export --platform android --output-dir dist-native-gatt-trigger-v1 > "$EXPORT_LOG" 2>&1; then
+  EXPORT_RESULT="PASS"
+else
+  EXPORT_RESULT="FAIL"
+fi
+
+echo "Expo export: $EXPORT_RESULT"
+
+if [ "$TSC_RESULT" = "PASS" ] && [ "$EXPORT_RESULT" = "PASS" ]; then
+  RESULT="READY_FOR_NATIVE_GATT_TRIGGER_APK_BUILD"
+else
+  RESULT="FIX_REQUIRED_BEFORE_NATIVE_GATT_TRIGGER_APK_BUILD"
+fi
+
+cat > "$REPORT" <<MD
+# Native GATT Trigger Button v1
+
+Generated: $STAMP
+
+## Result
+
+**$RESULT**
+
+## What changed
+
+- Replaced app/native-ble-gatt-proof.tsx with a truth-safe screen.
+- Kept BLE scan callback capture.
+- Added **Trigger Native GATT Packet Candidate** button.
+- The button searches available React Native native modules for a real GATT/packet method.
+- It does not claim final native BLE/GATT PASS.
+
+## Truth
+
+Final native BLE/GATT packet-bound PASS is still pending.
+
+The required final PASS still needs same packetId inside native BLE/GATT transport path markers.
+
+## Gates
+
+- TypeScript: $TSC_RESULT
+- Expo Android export: $EXPORT_RESULT
+
+## Backup
+
+$BACKUP/native-ble-gatt-proof.tsx.backup
+
+## Method audit
+
+$OUT/NATIVE_GATT_TRIGGER_METHOD_AUDIT_$STAMP.txt
+MD
+
+tar -czf "$ARCHIVE/native-gatt-trigger-button-v1-$STAMP.tar.gz" \
+  "$REPORT" "$TARGET" "$BACKUP/native-ble-gatt-proof.tsx.backup" \
+  "$OUT/NATIVE_GATT_TRIGGER_METHOD_AUDIT_$STAMP.txt" "$TSC_LOG" "$EXPORT_LOG" \
+  2>/dev/null || true
+
+echo ""
+echo "============================================================"
+echo "PATCH COMPLETE"
+echo "============================================================"
+echo "Result: $RESULT"
+echo "Report: $REPORT"
+echo "Archive: $ARCHIVE/native-gatt-trigger-button-v1-$STAMP.tar.gz"
+echo "============================================================"
+
+if [ "$RESULT" = "READY_FOR_NATIVE_GATT_TRIGGER_APK_BUILD" ]; then
+  exit 0
+else
+  exit 1
+fi

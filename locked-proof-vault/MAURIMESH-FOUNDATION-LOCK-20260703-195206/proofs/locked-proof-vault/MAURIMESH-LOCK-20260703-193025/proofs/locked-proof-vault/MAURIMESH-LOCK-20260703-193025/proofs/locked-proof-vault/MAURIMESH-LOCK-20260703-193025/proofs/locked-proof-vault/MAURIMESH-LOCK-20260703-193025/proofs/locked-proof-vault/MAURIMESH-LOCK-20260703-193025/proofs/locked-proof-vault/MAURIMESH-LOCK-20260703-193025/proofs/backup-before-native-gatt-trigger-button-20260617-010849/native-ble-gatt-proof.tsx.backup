@@ -1,0 +1,495 @@
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
+declare const require: any;
+
+type Marker = {
+  ts: string;
+  event: string;
+  line: string;
+};
+
+type VaultEntry = {
+  type: "NATIVE_BLE_GATT_TRUTH_GATE_ATTEMPT";
+  parsedType: "NATIVE_BLE_GATT_ATTEMPT";
+  packetId: string;
+  generatedAt: string;
+  nativeCallbackSeen: boolean;
+  nativePacketIdInsideTransportLog: boolean;
+  nativeBleGattPacketBoundPass: false;
+  verdict:
+    | "NATIVE_CALLBACK_PENDING"
+    | "NATIVE_CALLBACK_SEEN_PACKET_BOUND_PENDING";
+  score: number;
+  reason: string;
+  markers: Marker[];
+  truth: string;
+};
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function makePacketId() {
+  const a = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const b = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `MMN-${a}-${b}`;
+}
+
+function clean(value: unknown) {
+  return String(value ?? "unknown").replace(/\s+/g, "_").slice(0, 80);
+}
+
+async function safeVaultSave(key: string, value: unknown) {
+  try {
+    const AsyncStorage =
+      require("@react-native-async-storage/async-storage").default;
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    console.log(
+      `MAURIMESH_NATIVE_BLE_GATT | VAULT_SAVE_FAILED | error=${clean(
+        err instanceof Error ? err.message : err
+      )}`
+    );
+    return false;
+  }
+}
+
+function getBlePlx() {
+  try {
+    return require("react-native-ble-plx");
+  } catch (err) {
+    return null;
+  }
+}
+
+export default function NativeBleGattProofScreen() {
+  const [packetId, setPacketId] = useState(makePacketId());
+  const [markers, setMarkers] = useState<Marker[]>([]);
+  const [scanActive, setScanActive] = useState(false);
+  const [vaultSaved, setVaultSaved] = useState(false);
+  const managerRef = useRef<any>(null);
+  const stateSubRef = useRef<any>(null);
+
+  const nativeCallbackSeen = useMemo(() => {
+    return markers.some((m) =>
+      [
+        "BLE_MANAGER_CREATED",
+        "BLE_STATE_CALLBACK",
+        "BLE_SCAN_CALLBACK_DEVICE",
+        "BLE_SCAN_CALLBACK_ERROR",
+      ].includes(m.event)
+    );
+  }, [markers]);
+
+  const addMarker = (event: string, extra = "") => {
+    const ts = nowIso();
+
+    const line =
+      `MAURIMESH_NATIVE_BLE_GATT | ${event}` +
+      ` | packetId=${packetId}` +
+      ` | nativePacketBound=false` +
+      (extra ? ` | ${extra}` : "");
+
+    const marker = { ts, event, line };
+
+    setMarkers((prev) => [marker, ...prev].slice(0, 120));
+    console.log(line);
+  };
+
+  const stopScan = () => {
+    try {
+      if (managerRef.current) {
+        managerRef.current.stopDeviceScan();
+      }
+    } catch (err) {
+      addMarker(
+        "BLE_STOP_SCAN_ERROR",
+        `error=${clean(err instanceof Error ? err.message : err)}`
+      );
+    }
+
+    try {
+      if (stateSubRef.current?.remove) {
+        stateSubRef.current.remove();
+      }
+    } catch {
+      // no-op
+    }
+
+    setScanActive(false);
+    addMarker("BLE_SCAN_STOPPED");
+  };
+
+  const startScan = async () => {
+    setVaultSaved(false);
+
+    const BlePlx = getBlePlx();
+
+    if (!BlePlx?.BleManager) {
+      addMarker(
+        "BLE_PLX_UNAVAILABLE",
+        "truth=react-native-ble-plx_not_available_on_this_runtime"
+      );
+      Alert.alert(
+        "BLE unavailable",
+        "react-native-ble-plx is not available in this runtime. This is expected in Replit/web. Test this route inside the APK on phones."
+      );
+      return;
+    }
+
+    try {
+      if (!managerRef.current) {
+        managerRef.current = new BlePlx.BleManager();
+        addMarker("BLE_MANAGER_CREATED");
+      }
+
+      const manager = managerRef.current;
+
+      try {
+        const currentState = await manager.state();
+        addMarker("BLE_STATE_READ", `state=${clean(currentState)}`);
+      } catch (err) {
+        addMarker(
+          "BLE_STATE_READ_ERROR",
+          `error=${clean(err instanceof Error ? err.message : err)}`
+        );
+      }
+
+      try {
+        stateSubRef.current = manager.onStateChange((state: string) => {
+          addMarker("BLE_STATE_CALLBACK", `state=${clean(state)}`);
+        }, true);
+      } catch (err) {
+        addMarker(
+          "BLE_STATE_CALLBACK_ERROR",
+          `error=${clean(err instanceof Error ? err.message : err)}`
+        );
+      }
+
+      addMarker("BLE_SCAN_START_REQUESTED");
+
+      manager.startDeviceScan(
+        null,
+        { allowDuplicates: false },
+        (error: any, device: any) => {
+          if (error) {
+            addMarker(
+              "BLE_SCAN_CALLBACK_ERROR",
+              `error=${clean(error.message || error.reason || error)}`
+            );
+            return;
+          }
+
+          if (device) {
+            addMarker(
+              "BLE_SCAN_CALLBACK_DEVICE",
+              [
+                `deviceId=${clean(device.id)}`,
+                `name=${clean(device.name || device.localName)}`,
+                `rssi=${clean(device.rssi)}`,
+                `mtu=${clean(device.mtu)}`,
+              ].join(" | ")
+            );
+          }
+        }
+      );
+
+      setScanActive(true);
+    } catch (err) {
+      addMarker(
+        "BLE_SCAN_START_FATAL",
+        `error=${clean(err instanceof Error ? err.message : err)}`
+      );
+      setScanActive(false);
+    }
+  };
+
+  const resetPacket = () => {
+    stopScan();
+    const next = makePacketId();
+    setPacketId(next);
+    setMarkers([]);
+    setVaultSaved(false);
+    console.log(
+      `MAURIMESH_NATIVE_BLE_GATT | PACKET_RESET | packetId=${next} | nativePacketBound=false`
+    );
+  };
+
+  const saveAttempt = async () => {
+    const entry: VaultEntry = {
+      type: "NATIVE_BLE_GATT_TRUTH_GATE_ATTEMPT",
+      parsedType: "NATIVE_BLE_GATT_ATTEMPT",
+      packetId,
+      generatedAt: nowIso(),
+      nativeCallbackSeen,
+      nativePacketIdInsideTransportLog: false,
+      nativeBleGattPacketBoundPass: false,
+      verdict: nativeCallbackSeen
+        ? "NATIVE_CALLBACK_SEEN_PACKET_BOUND_PENDING"
+        : "NATIVE_CALLBACK_PENDING",
+      score: nativeCallbackSeen ? 72 : 40,
+      reason: nativeCallbackSeen
+        ? "Native BLE callback activity was observed, but packetId was not proven inside a native GATT/advertising transport payload."
+        : "No native BLE callback has been observed yet. Run inside APK on physical phones.",
+      markers,
+      truth:
+        "This entry never claims native BLE/GATT packet-bound PASS. PASS requires the same packetId inside native BLE/GATT transport logs.",
+    };
+
+    addMarker("ATTEMPT_SAVE_REQUESTED", `verdict=${entry.verdict}`);
+
+    const key = `maurimesh_native_ble_gatt_attempt_${packetId}_${Date.now()}`;
+    const saved = await safeVaultSave(key, entry);
+
+    setVaultSaved(saved);
+
+    addMarker(
+      saved ? "ATTEMPT_SAVED_TO_VAULT" : "ATTEMPT_SAVE_NOT_CONFIRMED",
+      `key=${key}`
+    );
+
+    Alert.alert(
+      saved ? "Attempt saved" : "Attempt not saved",
+      saved
+        ? "Native BLE/GATT attempt saved to local vault. Truth state remains PENDING until packet-bound native logs exist."
+        : "Could not save to vault. Check AsyncStorage availability."
+    );
+  };
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.kicker}>MAURIMESH NATIVE PROOF GATE</Text>
+      <Text style={styles.title}>Native BLE/GATT Truth Gate</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Packet ID</Text>
+        <TextInput
+          value={packetId}
+          onChangeText={setPacketId}
+          autoCapitalize="characters"
+          style={styles.input}
+        />
+        <Text style={styles.small}>
+          Use the same packetId when comparing APK workflow logs, ReactNativeJS
+          logs, and native transport logs.
+        </Text>
+      </View>
+
+      <View style={styles.grid}>
+        <ActionButton title="Start BLE Callback Capture" onPress={startScan} />
+        <ActionButton
+          title="Stop Capture"
+          onPress={stopScan}
+          variant="secondary"
+        />
+        <ActionButton
+          title="Save Attempt Into Vault"
+          onPress={saveAttempt}
+          variant="secondary"
+        />
+        <ActionButton title="Reset Packet" onPress={resetPacket} variant="dark" />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.section}>Truth State</Text>
+        <Text style={styles.row}>Scan active: {scanActive ? "YES" : "NO"}</Text>
+        <Text style={styles.row}>
+          Native callback seen: {nativeCallbackSeen ? "YES" : "NO"}
+        </Text>
+        <Text style={styles.row}>
+          Native BLE/GATT packet-bound PASS: NOT CLAIMED
+        </Text>
+        <Text style={styles.row}>
+          Vault saved this attempt: {vaultSaved ? "YES" : "NO"}
+        </Text>
+        <Text style={styles.warning}>
+          PASS requires packetId inside native BLE/GATT transport logs. BLE scan
+          callbacks alone are useful evidence but not final transport proof.
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.section}>Required Final PASS Rule</Text>
+        <Text style={styles.body}>
+          PASS_NATIVE_PACKET_BOUND_BLE_GATT_PROOF is allowed only when the same
+          packetId appears across app workflow logs and native BLE/GATT transport
+          markers from physical-device logcat capture.
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.section}>Markers</Text>
+        {markers.length === 0 ? (
+          <Text style={styles.small}>No markers yet.</Text>
+        ) : (
+          markers.map((marker, index) => (
+            <View key={`${marker.ts}-${index}`} style={styles.marker}>
+              <Text style={styles.markerTs}>{marker.ts}</Text>
+              <Text style={styles.markerLine}>{marker.line}</Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      <Text style={styles.footer}>
+        Final truth: this screen captures native callback attempts only. It does
+        not claim native BLE/GATT packet-bound PASS.
+      </Text>
+    </ScrollView>
+  );
+}
+
+function ActionButton({
+  title,
+  onPress,
+  variant = "primary",
+}: {
+  title: string;
+  onPress: () => void;
+  variant?: "primary" | "secondary" | "dark";
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        variant === "primary" && styles.buttonPrimary,
+        variant === "secondary" && styles.buttonSecondary,
+        variant === "dark" && styles.buttonDark,
+        pressed && { opacity: 0.76, transform: [{ scale: 0.98 }] },
+      ]}
+    >
+      <Text style={styles.buttonText}>{title}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+  content: {
+    padding: 20,
+    paddingBottom: 52,
+    gap: 18,
+  },
+  kicker: {
+    color: "#00D084",
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: "900",
+  },
+  card: {
+    borderWidth: 1,
+    borderColor: "rgba(0,208,132,0.35)",
+    backgroundColor: "rgba(0,32,20,0.72)",
+    borderRadius: 22,
+    padding: 18,
+    gap: 10,
+  },
+  label: {
+    color: "rgba(255,255,255,0.72)",
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "rgba(0,208,132,0.4)",
+    color: "#00D084",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  small: {
+    color: "rgba(255,255,255,0.68)",
+    lineHeight: 20,
+  },
+  grid: {
+    gap: 12,
+  },
+  button: {
+    minHeight: 54,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    paddingHorizontal: 16,
+  },
+  buttonPrimary: {
+    backgroundColor: "#00D084",
+    borderColor: "#00D084",
+  },
+  buttonSecondary: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(0,208,132,0.35)",
+  },
+  buttonDark: {
+    backgroundColor: "#050505",
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 15,
+  },
+  section: {
+    color: "#00D084",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  row: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "700",
+  },
+  warning: {
+    color: "#F59E0B",
+    lineHeight: 21,
+    fontWeight: "800",
+  },
+  body: {
+    color: "rgba(255,255,255,0.78)",
+    lineHeight: 22,
+  },
+  marker: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.1)",
+    paddingTop: 10,
+    gap: 4,
+  },
+  markerTs: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 11,
+  },
+  markerLine: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  footer: {
+    color: "#F59E0B",
+    lineHeight: 22,
+    fontWeight: "900",
+  },
+});

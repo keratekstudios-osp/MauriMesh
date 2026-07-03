@@ -1,0 +1,21 @@
+
+Stage: advertise_start_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:65:        event("advertise_start_packetId", packetId, detail)
+
+Stage: scan_result_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:70:        event("scan_result_packetId", packetId, detail)
+
+Stage: gatt_write_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:75:        eventFromBytes("gatt_write_packetId", bytes, detail)
+
+Stage: gatt_read_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:80:        eventFromBytes("gatt_read_packetId", bytes, detail)
+
+Stage: characteristic_changed_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:85:        eventFromBytes("characteristic_changed_packetId", bytes, detail)
+
+Stage: relay_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:90:        event("relay_packetId", packetId, detail)
+
+Stage: ack_packetId
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:95:        event("ack_packetId", packetId, detail)

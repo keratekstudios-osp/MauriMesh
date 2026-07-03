@@ -1,0 +1,45 @@
+MAURIMESH GITHUB REMOTE DIAGNOSTIC
+
+Project root: /home/runner/workspace
+Date: Sat Jun 13 08:10:02 PM UTC 2026
+
+Current branch:
+main
+
+Latest commit:
+6ce0f88 Protect MauriMesh raw device proof MMSF-RAW-LIVE-001
+
+Proof commit exists:
+PASS: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86 exists
+
+Proof tag target:
+6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
+
+All remotes:
+gitsafe-backup	git://gitsafe:5418/backup.git (fetch)
+gitsafe-backup	git://gitsafe:5418/backup.git (push)
+origin	https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git (fetch)
+origin	https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git (push)
+subrepl-1aboy8bh	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-1aboy8bh	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-1wl20hce	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-1wl20hce	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-2a54kaas	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-2a54kaas	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-34gyd66m	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-34gyd66m	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-n2eye9n6	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-n2eye9n6	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-r321kcvi	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-r321kcvi	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-s5e62aje	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-s5e62aje	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+subrepl-xpo7m7qz	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (fetch)
+subrepl-xpo7m7qz	git+ssh://git@ssh.spock.replit.dev:/home/runner/workspace (push)
+
+Origin URL:
+https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git
+
+Testing origin with git ls-remote:
+remote: Repository not found.
+fatal: repository 'https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git/' not found

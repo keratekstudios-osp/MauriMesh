@@ -1,0 +1,8 @@
+MARKER CHECK
+Dashboard safe marker: PASS
+Store-Forward safe logcat bridge marker: PASS
+Bad direct logcat bridge marker: PASS
+Route/file exists app/_layout.tsx: PASS
+Route/file exists app/login.tsx: PASS
+Route/file exists app/dashboard.tsx: PASS
+Route/file exists app/store-forward-proof.tsx: PASS

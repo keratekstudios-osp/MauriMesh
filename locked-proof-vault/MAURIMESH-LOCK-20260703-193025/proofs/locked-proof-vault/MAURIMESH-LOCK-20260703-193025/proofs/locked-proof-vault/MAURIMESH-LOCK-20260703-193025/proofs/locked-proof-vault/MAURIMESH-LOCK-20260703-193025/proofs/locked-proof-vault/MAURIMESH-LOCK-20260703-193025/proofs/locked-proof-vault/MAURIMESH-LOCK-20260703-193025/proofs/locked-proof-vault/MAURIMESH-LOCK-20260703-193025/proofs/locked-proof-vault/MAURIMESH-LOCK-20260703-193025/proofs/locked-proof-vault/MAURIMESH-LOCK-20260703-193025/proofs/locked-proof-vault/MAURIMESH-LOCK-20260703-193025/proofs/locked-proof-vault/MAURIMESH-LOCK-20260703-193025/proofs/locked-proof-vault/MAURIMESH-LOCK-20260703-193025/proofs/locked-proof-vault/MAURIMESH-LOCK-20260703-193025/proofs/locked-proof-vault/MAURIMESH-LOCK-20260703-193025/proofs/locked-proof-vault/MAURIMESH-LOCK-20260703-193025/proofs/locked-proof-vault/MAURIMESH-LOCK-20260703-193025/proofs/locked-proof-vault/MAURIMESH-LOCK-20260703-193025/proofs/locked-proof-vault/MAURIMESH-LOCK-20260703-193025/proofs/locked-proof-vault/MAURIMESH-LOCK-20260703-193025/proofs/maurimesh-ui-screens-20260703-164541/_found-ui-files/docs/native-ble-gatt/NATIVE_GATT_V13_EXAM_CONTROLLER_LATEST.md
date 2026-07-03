@@ -1,0 +1,15 @@
+# Native GATT v13 One-Tap 3-Device Exam Controller
+
+Adds:
+- START 3-DEVICE NATIVE GATT EXAM
+
+Markers:
+- V13_EXAM_PACKET_LOCKED
+- V13_EXAM_ROLE_CONFIRM_REQUIRED
+- V13_EXAM_NATIVE_TRIGGER_START
+- V13_EXAM_NATIVE_TRIGGER_DONE
+- V13_EXAM_READY_FOR_VAULT_SAVE
+- V13_EXAM_READY_FOR_MAC_VERDICT
+
+Truth boundary:
+PASS only if Mac logcat confirms the same packetId has native GATT markers on A06, S10, and A16.

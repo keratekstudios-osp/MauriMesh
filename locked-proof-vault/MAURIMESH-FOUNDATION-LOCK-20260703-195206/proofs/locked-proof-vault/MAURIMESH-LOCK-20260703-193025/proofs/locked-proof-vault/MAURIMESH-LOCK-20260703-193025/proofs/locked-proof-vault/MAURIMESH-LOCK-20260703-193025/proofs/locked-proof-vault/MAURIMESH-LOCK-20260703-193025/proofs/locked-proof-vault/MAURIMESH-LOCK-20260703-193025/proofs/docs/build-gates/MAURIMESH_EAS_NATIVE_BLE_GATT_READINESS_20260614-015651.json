@@ -1,0 +1,13 @@
+{
+  "gateId": "MM-EAS-NATIVE-BLE-GATT-READINESS-20260614-015651",
+  "generatedAt": "2026-06-14T01:56:53Z",
+  "readiness": "READY_FOR_EAS_COMPILE_CHECK",
+  "passCount": 19,
+  "warnCount": 6,
+  "failCount": 0,
+  "actualLoggerCallsExcludingHelper": 4,
+  "nativeBleGattPacketBoundPassClaimed": false,
+  "startsEasBuild": false,
+  "replitAndroidSdkMissing": true,
+  "nextPurpose": "EAS cloud native compile check only"
+}

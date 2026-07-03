@@ -1,0 +1,72 @@
+On branch main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .replit
+	modified:   app.json
+	modified:   app/native-ble-gatt-proof.tsx
+	modified:   app/proof-vault-health.tsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	MAURIMESH-REPLIT-UPLOAD
+	android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931
+	android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002
+	android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117
+	app/native-ble-gatt-proof.tsx.backup-appendEvent-crash-fix-20260628-043813
+	app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032
+	app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407
+	app/native-ble-gatt-proof.tsx.backup-final-gatebutton-crash-fix-20260703-115333
+	app/native-ble-gatt-proof.tsx.backup-fix-appendEvent-crash-20260628-091306
+	app/native-ble-gatt-proof.tsx.backup-polish-v2-20260703-182433
+	app/native-ble-gatt-proof.tsx.backup-proof-conductor-visible-v1-20260703-184711
+	app/native-ble-gatt-proof.tsx.backup-real-gatt-send-v1-20260627-141435
+	app/native-ble-gatt-proof.tsx.backup-remove-extra-brace-20260628-104903
+	app/native-ble-gatt-proof.tsx.backup-top-level-appendEvent-fix-20260628-092122
+	app/native-ble-gatt-proof.tsx.backup-top-level-appendEvent-fix-20260628-101722
+	app/native-ble-gatt-proof.tsx.backup-unified-guided-20260703-181932
+	app/native-gatt-exam-guide.tsx
+	archives/native-ble-gatt/MauriMeshNativeBlePacketModule.java.bak-20260623-193029
+	backup-before-store-forward-proof-vault-storage-20260614-043722/MAURIMESH-REPLIT-UPLOAD
+	bundletool.jar
+	collect-maurimesh-ui-screens-v2.sh
+	collect-maurimesh-ui-screens.sh
+	crash_after_patch_block.txt
+	docs/native-ble-gatt/GATT_EXPO_EXPORT_RESULT.txt
+	docs/native-ble-gatt/GATT_NATIVE_FILE_LIST.txt
+	docs/native-ble-gatt/GATT_PERMISSION_SCAN.txt
+	docs/native-ble-gatt/GATT_SCREEN_FILE_LIST.txt
+	docs/native-ble-gatt/GATT_TARGET_FILE_SCAN.txt
+	docs/native-ble-gatt/GATT_TSC_RESULT.txt
+	docs/native-ble-gatt/LIVE_GATT_MARKERS.txt
+	docs/native-ble-gatt/NATIVE_GATT_REAL_MARKERS_V10_20260623-193029.md
+	docs/native-ble-gatt/PASS_CLASSIFIER_TARGET_SCAN.txt
+	docs/native-ble-gatt/REAL_GATT_PROOF_MARKERS_V1_20260627-082117.md
+	docs/native-ble-gatt/capture-MMN-TRANSPORT-0001-20260627-085500/
+	docs/native-ble-gatt/capture-MMN-TRANSPORT-0001-20260627-095012/
+	docs/native-ble-gatt/capture-MMN-TRANSPORT-0001-20260627-104808/
+	final-polish-proof-suite.sh
+	fix-native-ble-module-syntax.sh
+	full_crash_after_patch.txt
+	gate_section.txt
+	locked-proof-vault/
+	maurimesh-ui-screens-20260703-164541.zip
+	maurimesh-ui-screens-20260703-164541/
+	maurimesh.aab
+	maurimesh.apks
+	patch-gatt-connection-instrumentation-v1.sh
+	patch-guided-truth-gate-polish-v2.sh
+	patch-native-gatt-exam-lights.sh
+	patch-native-gatt-real-markers-v10.sh
+	patch-proof-conductor-visible-v1.sh
+	patch-real-gatt-proof-markers-v1.sh
+	patch-truth-gate-real-gatt-send-v1.sh
+	patch-unified-guided-truth-gate-v1.sh
+	protect-maurimesh-foundation-lock-v1.sh
+	run-native-gatt-proof-capture.sh
+	src/proof/
+	universal.apk
+	verify-or-patch-native-gatt-exam-lights-v2.sh
+	~/
+
+no changes added to commit (use "git add" and/or "git commit -a")

@@ -1,0 +1,9 @@
+MAURIMESH GITHUB PROOF READBACK VERIFY
+
+Remote: https://github.com/MauriMesh/MauriMesh.git
+Expected commit: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
+Remote branch: proof-checkpoint/MMSF-RAW-LIVE-001
+Branch readback: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
+Remote tag: proof/store-forward-raw-device-MMSF-RAW-LIVE-001
+Tag readback: 25b5d7c6d39fe629f46c4e27dcf05e0c788153d5
+Tag deref commit: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86

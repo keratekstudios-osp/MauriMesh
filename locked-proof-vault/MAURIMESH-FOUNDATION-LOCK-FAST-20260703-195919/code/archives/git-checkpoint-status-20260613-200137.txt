@@ -1,0 +1,10 @@
+MAURIMESH GIT PROOF CHECKPOINT
+
+Verdict: PASS
+Commit: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
+Message: Protect MauriMesh raw device proof MMSF-RAW-LIVE-001
+Packet ID: MMSF-RAW-LIVE-001
+Raw proof SHA-256: 6088e2bb906df9f7c4bd2c1246715b047e43b698db40b1026a7bfe981208afe8
+Company review pack: docs/company-review-pack
+Master proof index: docs/proof-index/MAURIMESH_MASTER_PROOF_INDEX.md
+Certificate: docs/proof-certificates/raw_device_MMSF-RAW-LIVE-001_certificate.md

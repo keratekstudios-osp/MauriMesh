@@ -1,0 +1,7 @@
+Build ID: MM-EAS-NATIVE-BLE-GATT-COMPILE-20260614-040206
+Selected profile: preview
+EAS command: eas
+Readiness JSON: /home/runner/workspace/docs/build-gates/MAURIMESH_EAS_NATIVE_BLE_GATT_READINESS_20260614-015651.json
+
+EAS version:
+eas-cli/20.1.0 linux-x64 node-v20.20.0

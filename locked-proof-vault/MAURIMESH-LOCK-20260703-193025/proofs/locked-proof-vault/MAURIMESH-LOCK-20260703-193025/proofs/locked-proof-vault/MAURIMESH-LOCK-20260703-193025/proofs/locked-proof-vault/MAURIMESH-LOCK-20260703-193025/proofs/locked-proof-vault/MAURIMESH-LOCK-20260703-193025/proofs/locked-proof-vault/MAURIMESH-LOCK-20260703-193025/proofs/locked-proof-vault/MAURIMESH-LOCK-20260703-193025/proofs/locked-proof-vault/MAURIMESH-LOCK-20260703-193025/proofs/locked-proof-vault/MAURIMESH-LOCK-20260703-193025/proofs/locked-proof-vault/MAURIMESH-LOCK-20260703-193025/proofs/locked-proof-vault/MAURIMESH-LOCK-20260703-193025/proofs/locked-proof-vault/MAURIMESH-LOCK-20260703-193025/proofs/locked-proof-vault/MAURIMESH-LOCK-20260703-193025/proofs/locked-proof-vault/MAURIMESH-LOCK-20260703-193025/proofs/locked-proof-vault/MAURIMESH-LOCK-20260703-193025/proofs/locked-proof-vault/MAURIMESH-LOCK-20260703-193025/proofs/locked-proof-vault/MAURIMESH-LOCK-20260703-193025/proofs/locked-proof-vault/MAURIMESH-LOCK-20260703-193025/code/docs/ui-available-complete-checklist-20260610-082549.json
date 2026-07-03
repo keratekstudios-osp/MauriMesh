@@ -1,0 +1,13 @@
+{
+  "project": "MauriMesh Messenger",
+  "timestamp": "20260610-082549",
+  "total_checks": 135,
+  "complete": 134,
+  "partial": 1,
+  "missing_or_failed": 0,
+  "score_percent": 99,
+  "typescript": "passed",
+  "final_ui_status": "AVAILABLE_WITH_PARTIALS",
+  "report": "/home/runner/workspace/docs/ui-available-complete-checklist-20260610-082549.md",
+  "latest_report": "/home/runner/workspace/docs/ui-available-complete-checklist-latest.md"
+}

@@ -1,0 +1,66 @@
+
+Generated: 20260616-222922
+Root: /home/runner/workspace
+
+============================================================
+1. REQUIRED FILES
+============================================================
+PASS: android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt exists
+PASS: android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt exists
+PASS: android/app/src/main/java/com/maurimesh/messenger/MeshRawPacketGattServer.kt exists
+PASS: tools/capture-gatt-packet-payload-proof-v1.sh exists
+PASS: app/native-ble-gatt-proof.tsx exists
+PASS: app/dashboard.tsx exists
+
+============================================================
+2. GATT PAYLOAD MARKER CHECK
+============================================================
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:27:      "GATT_PACKET_PAYLOAD" +
+PASS: GATT_PACKET_PAYLOAD marker found
+android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt:256:          MauriMeshGattPacketProof.logGattPayload("GATT_CLIENT_WRITE_ATTEMPT", characteristic.value, "MeshCentralClient.kt before writeCharacteristic")
+PASS: GATT_CLIENT_WRITE_ATTEMPT marker found
+android/app/src/main/java/com/maurimesh/messenger/MeshRawPacketGattServer.kt:48:      MauriMeshGattPacketProof.logGattPayload("GATT_SERVER_WRITE_RECEIVED", value, "MeshRawPacketGattServer.kt onCharacteristicWriteRequest")
+PASS: GATT_SERVER_WRITE_RECEIVED marker found
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:30:        " | nativePacketBoundCandidate=$packetSeen" +
+tools/capture-gatt-packet-payload-proof-v1.sh:138:BOUND_CANDIDATE_COUNT="$(count_pattern "nativePacketBoundCandidate=true")"
+tools/capture-gatt-packet-payload-proof-v1.sh:178:- nativePacketBoundCandidate=true markers: $BOUND_CANDIDATE_COUNT
+PASS: nativePacketBoundCandidate marker found
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:31:        " | nativePacketBound=false" +
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:47:        " | nativePacketBound=false" +
+tools/capture-gatt-packet-payload-proof-v1.sh:140:BOUND_FALSE_COUNT="$(count_pattern "nativePacketBound=false")"
+tools/capture-gatt-packet-payload-proof-v1.sh:180:- nativePacketBound=false markers: $BOUND_FALSE_COUNT
+app/native-ble-gatt-proof.tsx:100:      ` | nativePacketBound=false` +
+app/native-ble-gatt-proof.tsx:224:      `MAURIMESH_NATIVE_BLE_GATT | PACKET_RESET | packetId=${next} | nativePacketBound=false`
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:31:        " | nativePacketBound=false" +
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:47:        " | nativePacketBound=false" +
+PASS: nativePacketBound=false truth lock found
+
+============================================================
+3. FALSE FINAL PASS CHECK
+============================================================
+PASS: No active final native BLE/GATT PASS claim found
+
+============================================================
+4. TYPESCRIPT CHECK
+============================================================
+PASS: TypeScript passed
+
+============================================================
+5. EXPO EXPORT CHECK
+============================================================
+PASS: Expo Android export passed
+
+============================================================
+6. OPTIONAL LOCAL GRADLE KOTLIN COMPILE
+============================================================
+Running local Gradle Kotlin compile. This may take a while...
+WARN: Local Gradle Kotlin compile failed or environment missing dependencies. See /home/runner/workspace/docs/native-ble-gatt/GATT_PACKET_PAYLOAD_PREBUILD_GRADLE_20260616-222922.log
+
+============================================================
+SUMMARY
+============================================================
+PASS: 14
+WARN: 1
+FAIL: 0
+PENDING: 0
+RESULT: READY_FOR_FRESH_GATT_PAYLOAD_APK_BUILD

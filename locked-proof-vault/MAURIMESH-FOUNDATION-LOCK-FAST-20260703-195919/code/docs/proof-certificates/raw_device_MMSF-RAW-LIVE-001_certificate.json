@@ -1,0 +1,35 @@
+{
+  "project": "MauriMesh",
+  "milestone": "MauriMesh Store-Forward Raw Device Evidence PASS + Archive Hash Seal",
+  "packetId": "MMSF-RAW-LIVE-001",
+  "verdict": "PASS",
+  "proofType": "three_device_store_forward_raw_adb_logcat_capture",
+  "deviceChain": [
+    {
+      "role": "PHONE_A",
+      "device": "Samsung Galaxy A06",
+      "function": "Sender"
+    },
+    {
+      "role": "PHONE_B",
+      "device": "Samsung Galaxy S10",
+      "function": "Store-Forward Relay"
+    },
+    {
+      "role": "PHONE_C",
+      "device": "Samsung Galaxy A16",
+      "function": "Delayed Receiver + ACK"
+    }
+  ],
+  "rawEvidenceFolder": "/Users/maurimesh/maurimesh-raw-evidence/run-20260613T194329Z-MMSF-RAW-LIVE-001",
+  "archiveFile": "/Users/maurimesh/maurimesh-raw-evidence/maurimesh-raw-device-proof-MMSF-RAW-LIVE-001.tar.gz",
+  "sha256": "6088e2bb906df9f7c4bd2c1246715b047e43b698db40b1026a7bfe981208afe8",
+  "storageVerification": {
+    "rawEvidenceCapture": "PASS",
+    "archiveHash": "PASS",
+    "manifestCopies": "PASS",
+    "archiveCopies": "PASS",
+    "finalProofStorage": "PASS"
+  },
+  "protected": true
+}

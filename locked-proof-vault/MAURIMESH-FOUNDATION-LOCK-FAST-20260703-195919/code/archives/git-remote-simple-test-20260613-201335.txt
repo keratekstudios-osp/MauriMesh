@@ -1,0 +1,11 @@
+MAURIMESH SIMPLE GITHUB REMOTE TEST
+
+Old URL: https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git
+Old status: 128
+remote: Repository not found.
+fatal: repository 'https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git/' not found
+
+New URL: https://github.com/keratekstudios/MauriMeshMessenger-BE.git
+New status: 128
+remote: Repository not found.
+fatal: repository 'https://github.com/keratekstudios/MauriMeshMessenger-BE.git/' not found

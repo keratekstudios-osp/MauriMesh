@@ -1,0 +1,6 @@
+Generated: 2026-06-14T01:52:08Z
+
+Existing ANDROID_HOME=not-set
+Existing ANDROID_SDK_ROOT=not-set
+
+Searching /nix/store for Android SDK candidates...

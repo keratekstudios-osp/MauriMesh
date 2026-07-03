@@ -1,0 +1,12 @@
+MAURIMESH GITHUB PUSH DRY RUN AFTER ORIGIN STATUS
+
+Origin: https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git
+Branch: main
+Tag: proof/store-forward-raw-device-MMSF-RAW-LIVE-001
+Commit: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
+
+Dry-run exit code: 128
+
+Dry-run output:
+remote: Repository not found.
+fatal: repository 'https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git/' not found

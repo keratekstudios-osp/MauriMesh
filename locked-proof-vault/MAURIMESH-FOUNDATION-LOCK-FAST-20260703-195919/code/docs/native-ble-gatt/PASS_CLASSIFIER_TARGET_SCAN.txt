@@ -1,0 +1,145 @@
+app/ble-2-hop-proof.tsx:285:      nativeBleGattPacketBoundPass: false,
+app/ble-2-hop-proof.tsx:295:      `MAURIMESH_PROOF_VAULT_SAVE | BLE_TWO_HOP_PROOF | packetId=${safePacketId} | key=${key} | truthClass=APK_PROOF_SCREEN_WORKFLOW | nativeBleGattPacketBoundPass=false`
+app/ble-3-device-proof.tsx:46:      nativeBleGattPacketBoundPass: false,
+app/ble-3-device-proof.tsx:56:      `MAURIMESH_PROOF_VAULT_SAVE | BLE_THREE_DEVICE_RELAY_PROOF | packetId=${safePacketId} | key=${key} | truthClass=APK_PROOF_SCREEN_WORKFLOW | nativeBleGattPacketBoundPass=false`
+app/store-forward-proof.tsx:666:      nativeBleGattPacketBoundPass: false,
+app/store-forward-proof.tsx:676:      `MAURIMESH_PROOF_VAULT_SAVE | STORE_FORWARD | packetId=${safePacketId} | key=${key} | truthClass=APK_PROOF_SCREEN_WORKFLOW | nativeBleGattPacketBoundPass=false`
+app/3-device-proof.tsx:52:      nativeBleGattPacketBoundPass: false,
+app/3-device-proof.tsx:74:      `MAURIMESH_PROOF_VAULT_SAVE | THREE_DEVICE_RELAY_PROOF | packetId=${nextPacketId} | key=${key} | truthClass=APK_PROOF_SCREEN_WORKFLOW | nativeBleGattPacketBoundPass=false`
+app/learner-core.tsx:103:      nativeBleGattPacketBoundPass: false,
+app/learner-core.tsx:113:      `MAURIMESH_LEARNER_REPORT_SAVE | packetId=${safePacketId} | key=${key} | nativeBleGattPacketBoundPass=false`
+app/proof-vault-health.tsx:19:  nativeBleGattPacketBoundPass: boolean;
+app/proof-vault-health.tsx:46:  let nativeBleGattPacketBoundPass = false;
+app/proof-vault-health.tsx:52:    nativeBleGattPacketBoundPass = Boolean(json.nativeBleGattPacketBoundPass);
+app/proof-vault-health.tsx:64:    nativeBleGattPacketBoundPass,
+app/proof-vault-health.tsx:107:    const nativePassEntries = entries.filter((row) => row.nativeBleGattPacketBoundPass);
+app/proof-vault-health.tsx:123:      nativeBleGattPacketBoundPassCount: nativePassEntries.length,
+app/proof-vault-health.tsx:125:        "This report audits local vault storage. It does not claim native BLE/GATT packet-bound PASS unless entries contain nativeBleGattPacketBoundPass=true backed by native transport logs.",
+app/proof-vault-health.tsx:131:        nativeBleGattPacketBoundPass: row.nativeBleGattPacketBoundPass,
+app/proof-vault-health.tsx:154:          nativeBleGattPacketBoundPass: false,
+app/proof-vault-health.tsx:205:                Native pass: {entry.nativeBleGattPacketBoundPass ? "true" : "false"}
+app/native-ble-gatt-proof.tsx:6:  GATT_PACKET_PAYLOAD + GATT_CLIENT_WRITE_ATTEMPT + GATT_SERVER_WRITE_RECEIVED
+app/native-ble-gatt-proof.tsx:14:  "GATT_PACKET_PAYLOAD",
+app/native-ble-gatt-proof.tsx:15:  "GATT_CLIENT_WRITE_ATTEMPT",
+app/native-ble-gatt-proof.tsx:16:  "GATT_SERVER_WRITE_RECEIVED",
+app/native-ble-gatt-proof.tsx:21:  "PASS_READY_TO_LOCK requires same packetId GATT_PACKET_PAYLOAD + GATT_CLIENT_WRITE_ATTEMPT + GATT_SERVER_WRITE_RECEIVED";
+app/native-ble-gatt-proof.tsx:45:      `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_REGISTRY_REQUIRE_ERROR | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:51:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_KEYS | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:67:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_NATIVE_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:80:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:86:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_GET_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:100:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:106:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:113:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_MODULE_NOT_FOUND | candidates=${candidateNames.join(',')} | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:142:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_CALLING_METHOD | module=${resolved.name} | source=${resolved.source} | method=${methodName} | packetId=${packetId} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:169:  finalPassClaimed: false;
+app/native-ble-gatt-proof.tsx:313:  { key: "GATT_PAYLOAD", label: "GATT Payload", marker: "GATT_PACKET_PAYLOAD", tone: "green" },
+app/native-ble-gatt-proof.tsx:314:  { key: "CLIENT_WRITE", label: "Client Write", marker: "GATT_CLIENT_WRITE_ATTEMPT", tone: "green" },
+app/native-ble-gatt-proof.tsx:315:  { key: "SERVER_RECEIVED", label: "Server Received", marker: "GATT_SERVER_WRITE_RECEIVED", tone: "green" },
+app/native-ble-gatt-proof.tsx:453:      finalPassClaimed: false,
+app/native-ble-gatt-proof.tsx:460:      `${LOG_TAG} VAULT_SAVE_ATTEMPT packetId=${packetId} saved=true vaultCount=${vaultCount} finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx:505:    const msg = `${LOG_TAG} SHARED_PACKET_V9_APPLIED packetId=${clean} finalPassClaimed=false`;
+app/native-ble-gatt-proof.tsx:560:        `${LOG_TAG} TRUTH_NOTE packetId=${packetId} buttonTriggerCalled=true finalPassClaimed=false requiredNativeMarkers=GATT_PACKET_PAYLOAD,GATT_CLIENT_WRITE_ATTEMPT,GATT_SERVER_WRITE_RECEIVED`
+app/native-ble-gatt-proof.tsx:620:          GATT_PACKET_PAYLOAD, GATT_CLIENT_WRITE_ATTEMPT, and GATT_SERVER_WRITE_RECEIVED.
+app/native-ble-gatt-proof.tsx:677:        <GateButton title="Save Attempt Into Vault" tone="secondary" onPress={saveAttempt} />
+app/native-ble-gatt-proof.tsx:688:        <Text style={styles.mono}>GATT_PACKET_PAYLOAD</Text>
+app/native-ble-gatt-proof.tsx:689:        <Text style={styles.mono}>GATT_CLIENT_WRITE_ATTEMPT</Text>
+app/native-ble-gatt-proof.tsx:690:        <Text style={styles.mono}>GATT_SERVER_WRITE_RECEIVED</Text>
+app/maurimesh-spine-exam.tsx:73:          Native BLE/GATT packet-bound PASS: {String(result.nativeBleGattPacketBoundPass)}
+app/native-ble-gatt-proof.tsx.backup-native-gatt-buttons-20260617-022015:319:        <Text style={styles.buttonText}>Save Attempt into Vault</Text>
+app/native-gatt-directional-relay-proof.tsx:53:    const line = `${LOG_TAG} ${stage} packetId=${packetId} role=${role} finalPassClaimed=false`;
+app/native-gatt-directional-relay-proof.tsx:65:          )} finalPassClaimed=false`
+app/native-gatt-directional-relay-proof.tsx:71:          )} finalPassClaimed=false`
+app/native-gatt-directional-relay-proof.tsx:76:        `${LOG_TAG} NATIVE_TRIGGER_UNAVAILABLE packetId=${packetId} stage=${stage} finalPassClaimed=false`
+app/native-gatt-directional-relay-proof.tsx:83:    append(`${LOG_TAG} EXAM_STARTED packetId=${packetId} finalPassClaimed=false`);
+app/native-gatt-directional-relay-proof.tsx:107:      append(`${LOG_TAG} EXAM_APPROVED packetId=${packetId} finalPassClaimed=false`);
+app/native-gatt-directional-relay-proof.tsx:112:        )} finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:23:      `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_REGISTRY_REQUIRE_ERROR | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:29:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_KEYS | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:45:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_NATIVE_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:58:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:64:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_GET_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:78:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:84:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:91:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_MODULE_NOT_FOUND | candidates=${candidateNames.join(',')} | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:120:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_CALLING_METHOD | module=${resolved.name} | source=${resolved.source} | method=${methodName} | packetId=${packetId} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:147:  finalPassClaimed: false;
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:404:      finalPassClaimed: false,
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:411:      `${LOG_TAG} VAULT_SAVE_ATTEMPT packetId=${packetId} saved=true vaultCount=${vaultCount} finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:456:    const msg = `${LOG_TAG} SHARED_PACKET_V9_APPLIED packetId=${clean} finalPassClaimed=false`;
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:511:        `${LOG_TAG} TRUTH_NOTE packetId=${packetId} buttonTriggerCalled=true finalPassClaimed=false requiredNativeMarkers=GATT_PACKET_PAYLOAD,GATT_CLIENT_WRITE_ATTEMPT,GATT_SERVER_WRITE_RECEIVED`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:571:          GATT_PACKET_PAYLOAD, GATT_CLIENT_WRITE_ATTEMPT, and GATT_SERVER_WRITE_RECEIVED.
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:628:        <GateButton title="Save Attempt Into Vault" tone="secondary" onPress={saveAttempt} />
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:639:        <Text style={styles.mono}>GATT_PACKET_PAYLOAD</Text>
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:640:        <Text style={styles.mono}>GATT_CLIENT_WRITE_ATTEMPT</Text>
+app/native-ble-gatt-proof.tsx.backup-exam-lights-20260627-110032:641:        <Text style={styles.mono}>GATT_SERVER_WRITE_RECEIVED</Text>
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:23:      `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_REGISTRY_REQUIRE_ERROR | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:29:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_KEYS | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:45:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_NATIVE_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:58:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_MODULE_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:64:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_TURBO_GET_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:78:            `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_FOUND | name=${name} | methods=${methodKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:84:          `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_GLOBAL_TURBO_PROXY_ERROR | name=${name} | error=${String(err?.message || err)} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:91:    `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_MODULE_NOT_FOUND | candidates=${candidateNames.join(',')} | NativeModules=${nativeKeys.join(',')} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:120:        `MAURIMESH_NATIVE_BLE_GATT | GATT_JS_RESOLVER_V8B_CALLING_METHOD | module=${resolved.name} | source=${resolved.source} | method=${methodName} | packetId=${packetId} | finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:147:  finalPassClaimed: false;
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:291:  { key: "GATT_PAYLOAD", label: "GATT Payload", marker: "GATT_PACKET_PAYLOAD", tone: "green" },
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:292:  { key: "CLIENT_WRITE", label: "Client Write", marker: "GATT_CLIENT_WRITE_ATTEMPT", tone: "green" },
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:293:  { key: "SERVER_RECEIVED", label: "Server Received", marker: "GATT_SERVER_WRITE_RECEIVED", tone: "green" },
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:431:      finalPassClaimed: false,
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:438:      `${LOG_TAG} VAULT_SAVE_ATTEMPT packetId=${packetId} saved=true vaultCount=${vaultCount} finalPassClaimed=false`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:483:    const msg = `${LOG_TAG} SHARED_PACKET_V9_APPLIED packetId=${clean} finalPassClaimed=false`;
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:538:        `${LOG_TAG} TRUTH_NOTE packetId=${packetId} buttonTriggerCalled=true finalPassClaimed=false requiredNativeMarkers=GATT_PACKET_PAYLOAD,GATT_CLIENT_WRITE_ATTEMPT,GATT_SERVER_WRITE_RECEIVED`
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:598:          GATT_PACKET_PAYLOAD, GATT_CLIENT_WRITE_ATTEMPT, and GATT_SERVER_WRITE_RECEIVED.
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:655:        <GateButton title="Save Attempt Into Vault" tone="secondary" onPress={saveAttempt} />
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:666:        <Text style={styles.mono}>GATT_PACKET_PAYLOAD</Text>
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:667:        <Text style={styles.mono}>GATT_CLIENT_WRITE_ATTEMPT</Text>
+app/native-ble-gatt-proof.tsx.backup-exam-lights-v2-20260627-111407:668:        <Text style={styles.mono}>GATT_SERVER_WRITE_RECEIVED</Text>
+src/maurimesh/intelligence/types.ts:68:  nativeBleGattPacketBoundPass: boolean;
+src/maurimesh/intelligence/proof/proofVerdict.ts:39:  const nativeBleGattPacketBoundPass =
+src/maurimesh/intelligence/proof/proofVerdict.ts:47:  if (nativeBleGattPacketBoundPass) {
+src/maurimesh/intelligence/proof/proofVerdict.ts:55:      nativeBleGattPacketBoundPass: false,
+src/maurimesh/intelligence/proof/proofVerdict.ts:68:      nativeBleGattPacketBoundPass: false,
+src/maurimesh/intelligence/proof/proofVerdict.ts:80:    nativeBleGattPacketBoundPass: false,
+src/maurimesh/intelligence/exam/examEngine.ts:35:    hasNativeBleGattEvidence: proof.nativeBleGattPacketBoundPass,
+src/maurimesh/intelligence/exam/examEngine.ts:46:    nativeBleGattSeen: proof.nativeBleGattPacketBoundPass,
+src/maurimesh/intelligence/exam/examEngine.ts:54:      transport: proof.nativeBleGattPacketBoundPass ? "BLE_GATT" : "BLE_SCREEN_WORKFLOW",
+src/maurimesh/intelligence/exam/examEngine.ts:86:      input.proofType !== "NATIVE_BLE_GATT" || proof.nativeBleGattPacketBoundPass,
+src/maurimesh/intelligence/exam/examEngine.ts:87:      proof.nativeBleGattPacketBoundPass
+src/maurimesh/intelligence/spine/unifiedSpine.ts:28:    nativeBleGattPacketBoundPass: exam.truthClass === "NATIVE_BLE_GATT_PACKET_BOUND",
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:30:            Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_PACKAGE_REGISTRATION_V7 | source=MainApplication | action=add_package | module=MauriMeshNativeBlePacket | finalPassClaimed=false")
+android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt:256:          MauriMeshGattPacketProof.logGattPayload("GATT_CLIENT_WRITE_ATTEMPT", characteristic.value, "MeshCentralClient.kt before writeCharacteristic")
+android/app/src/main/java/com/maurimesh/messenger/MeshRawPacketGattServer.kt:48:      MauriMeshGattPacketProof.logGattPayload("GATT_SERVER_WRITE_RECEIVED", value, "MeshRawPacketGattServer.kt onCharacteristicWriteRequest")
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:30:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_CONSTRUCTOR_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:36:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_GET_NAME_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:81:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=" + cleanPacketId + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:89:    result.putBoolean("finalPassClaimed", false);
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:96:        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:101:        "GATT_WRITE_PATH_NOT_REACHED | packetId=" + cleanPacketId + " | reason=bridge_method_entered_only_real_gatt_markers_must_come_from_transport | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.java:17:      "GATT_PACKAGE_CREATE_NATIVE_MODULES_V7 | package=MauriMeshNativeBlePacketPackage | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.java:25:      "GATT_PACKAGE_MODULE_ADDED_V7 | package=MauriMeshNativeBlePacketPackage | count=" + modules.size() + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshGattPacketProof.kt:27:      "GATT_PACKET_PAYLOAD" +
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:30:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_CONSTRUCTOR_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:36:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_GET_NAME_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:81:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=" + cleanPacketId + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:89:    result.putBoolean("finalPassClaimed", false);
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:96:        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:101:        "GATT_PACKET_PAYLOAD | packetId=" + cleanPacketId + " | payload=MM_GATT_PAYLOAD_V10 | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:106:        "GATT_CLIENT_WRITE_ATTEMPT | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-051931:111:        "GATT_SERVER_WRITE_RECEIVED | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=true"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:30:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_CONSTRUCTOR_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:36:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_GET_NAME_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:81:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=" + cleanPacketId + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:89:    result.putBoolean("finalPassClaimed", false);
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:96:        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:102:        "GATT_PACKET_PAYLOAD | packetId=" + cleanPacketId + " | payload=MM_GATT_PAYLOAD_V10 | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:107:        "GATT_CLIENT_WRITE_ATTEMPT | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-20260625-054002:112:        "GATT_SERVER_WRITE_RECEIVED | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=true"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:30:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_CONSTRUCTOR_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:36:    Log.i("MAURIMESH_NATIVE_BLE_GATT", "GATT_MODULE_GET_NAME_V7 | module=MauriMeshNativeBlePacket | finalPassClaimed=false");
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:81:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=" + cleanPacketId + " | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:89:    result.putBoolean("finalPassClaimed", true);
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:96:        "GATT_TRIGGER_NATIVE_METHOD_RESULT | packetId=" + cleanPacketId + " | helperResult=" + helperResult + " | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:101:        "GATT_PACKET_PAYLOAD | packetId=" + cleanPacketId + " | payload=MM_GATT_PAYLOAD_V10 | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:106:        "GATT_CLIENT_WRITE_ATTEMPT | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java.bak-real-gatt-proof-markers-20260627-082117:111:        "GATT_SERVER_WRITE_RECEIVED | packetId=" + cleanPacketId + " | service=MauriMeshGatt | characteristic=PacketProof | finalPassClaimed=true"

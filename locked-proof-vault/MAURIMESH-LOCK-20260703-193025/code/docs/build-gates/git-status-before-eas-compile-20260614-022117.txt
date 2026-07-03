@@ -1,0 +1,179 @@
+ M .gitignore
+ M android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt
+ M android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt
+ M app/_layout.tsx
+ M app/ble-2-hop-proof.tsx
+ M app/ble-3-device-proof.tsx
+ M app/dashboard.tsx
+ M app/login.tsx
+ M app/store-forward-proof.tsx
+ M archives/maurimesh-locked-proof-vault/LOCKED_PROOF_LEDGER.md
+ M archives/maurimesh-locked-proof-vault/proofs/MM-PROOF-003-3DEVICE-HOP.md
+ M archives/maurimesh-locked-proof-vault/proofs/MM-PROOF-004-STORE-FORWARD.md
+ M push-final-maurimesh-agent-tasks.sh
+ M src/components/AiPixelReconstructionPanel.tsx
+ M src/components/BackupIntelligencePanel.tsx
+ M src/components/BleHardwareRuntimePanel.tsx
+ M src/components/DeviceHardwarePanel.tsx
+ M src/components/HardwareRuntimeControllerPanel.tsx
+ M src/components/HybridWifiBleMeshPanel.tsx
+ M src/components/IntelligencePanel.tsx
+ M src/components/MauriButton.tsx
+ M src/components/MauriPanel.tsx
+ M src/components/MessageFallbackPanel.tsx
+ M src/components/NativeTelemetryPanel.tsx
+ M src/components/PixelCallingBackupFallbackPanel.tsx
+ M src/components/PixelCallingRuntimePanel.tsx
+?? android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt.backup-before-maurimesh-native-ble-20260614-001409
+?? android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt
+?? android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java
+?? android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.java
+?? app/3-device-proof.tsx
+?? app/locked-proof-vault.tsx
+?? app/locked-proofs.tsx
+?? app/runtime-logs.tsx
+?? archives/before-native-ble-gatt-packetid-logging-20260614-013511.tar.gz
+?? archives/before-native-ble-gatt-wiring-20260614-013855.tar.gz
+?? archives/button-audit/
+?? archives/finish-blemodule-ack-repair-shape-inspect-20260614-022004.tar.gz
+?? archives/git-checkpoint-status-20260613-200137.txt
+?? archives/git-origin-setup-status-20260613-200753.txt
+?? archives/git-proof-tag-status-20260613-200535.txt
+?? archives/git-push-dry-run-after-origin-status-20260613-200856.txt
+?? archives/git-push-dry-run-status-20260613-200636.txt
+?? archives/git-remote-diagnostic-20260613-201002.txt
+?? archives/git-remote-owner-test-20260613-201222.txt
+?? archives/git-remote-simple-test-20260613-201335.txt
+?? archives/github-auth-check-20260613-201528.txt
+?? archives/github-create-repo-status-20260613-202054.txt
+?? archives/github-draft-release-notes-MMSF-RAW-LIVE-001-20260613-202814.md
+?? archives/github-draft-release-readback-20260613-202921.txt
+?? archives/github-draft-release-status-20260613-202814.txt
+?? archives/github-maurimesh-org-dry-run-20260613-202347.txt
+?? archives/github-proof-branch-push-status-20260613-202444.txt
+?? archives/github-proof-readback-verify-20260613-202632.txt
+?? archives/github-repo-finder-20260613-201436.txt
+?? archives/maurimesh-2-hop-proof/
+?? archives/maurimesh-3-device-proof/
+?? archives/maurimesh-apk-build-readiness-20260613-204248.tar.gz
+?? archives/maurimesh-app-runtime-review-20260613-204035.tar.gz
+?? archives/maurimesh-app-runtime-risk-files-20260613-203925.tar.gz
+?? archives/maurimesh-eas-native-ble-gatt-compile-check-20260614-015844.tar.gz
+?? archives/maurimesh-eas-native-ble-gatt-readiness-20260614-015651.tar.gz
+?? archives/maurimesh-final-company-review-pack-20260613-195955.tar.gz
+?? archives/maurimesh-investor-proof-pack-20260613-170220.tar.gz
+?? archives/maurimesh-investor-proof-pack-with-one-page-20260613-170403.tar.gz
+?? archives/maurimesh-java17-native-ble-gatt-check-20260614-014718.tar.gz
+?? archives/maurimesh-native-ble-gatt-packetid-logging-gate-20260614-013511.tar.gz
+?? archives/maurimesh-native-ble-gatt-packetid-wiring-20260614-013855.tar.gz
+?? archives/maurimesh-public-proof-summary-20260613-203225.tar.gz
+?? archives/maurimesh-raw-device-proof-index-update-20260613-195456.tar.gz
+?? archives/maurimesh-static-native-ble-gatt-wiring-audit-20260614-015436.tar.gz
+?? archives/maurimesh-store-forward-proof/
+?? archives/maurimesh-typescript-import-gate-20260613-204146.tar.gz
+?? archives/maurimesh-working-tree-audit-20260613-203837.tar.gz
+?? archives/public-summary-git-push-status-20260613-203419.txt
+?? archives/public-summary-readback-verify-20260613-203528.txt
+?? backup-before-3-device-hop-proof-20260611-133306/
+?? backup-before-3device-proof-routes-20260613-212947/
+?? backup-before-all-mauripanel-import-placement-20260612-051258/
+?? backup-before-ble-2-hop-proof-20260611-122154/
+?? backup-before-button-audit-fallback-20260611-200016/
+?? backup-before-hard-confirm-fix-20260611-190230/
+?? backup-before-js-bundle-fix-20260612-050407/
+?? backup-before-js-bundle-fix-20260612-050703/
+?? backup-before-locked-proof-vault-dashboard-button-20260611-214332/
+?? backup-before-locked-proof-vault-recovery-20260611-214202/
+?? backup-before-locked-proof-vault-ui-20260611-213916/
+?? backup-before-locked-proof-vault-ui-20260611-214005/
+?? backup-before-locked-proofs-ui-20260611-213502/
+?? backup-before-locked-proofs-ui-20260611-213521/
+?? backup-before-locked-proofs-ui-20260611-213759/
+?? backup-before-mauripanel-fix-20260612-041519/
+?? backup-before-mauripanel-import-fix-20260612-045459/
+?? backup-before-native-ble-gatt-packet-logger-20260614-000211/
+?? backup-before-phone-a-packetid-entry-20260611-144441/
+?? backup-before-proof-exam-auto-approval-20260611-150115/
+?? backup-before-proof-exam-auto-approval-20260611-150142/
+?? backup-before-proof-vault-marker-fix-20260612-002038/
+?? backup-before-proof-vault-marker-fix-20260612-002108/
+?? backup-before-runtime-app-logs-20260612-072617/
+?? backup-before-safe-3-device-screen-20260611-193254/
+?? backup-before-store-forward-proof-20260611-193456/
+?? backup-before-store-forward-proof-20260611-193507/
+?? check-java-and-native-ble-gatt-wiring-coverage.sh
+?? docs/MAURIPANEL_CRASH_FIX_READY_FOR_APK.md
+?? docs/build-gates/
+?? docs/build-reports/
+?? docs/crash-fixes/
+?? docs/investor-proof-pack/MAURIMESH_DUE_DILIGENCE_SUMMARY.md
+?? docs/investor-proof-pack/MAURIMESH_INVESTOR_PROOF_PACK.md
+?? docs/investor-proof-pack/MAURIMESH_ONE_PAGE_EXECUTIVE_SUMMARY.md
+?? docs/investor-proof-pack/MAURIMESH_ONE_PAGE_EXECUTIVE_SUMMARY.txt
+?? docs/investor-proof-pack/MAURIMESH_PROOF_LIMITS_AND_NEXT_STEPS.md
+?? docs/investor-proof-pack/MAURIMESH_PROOF_PACK_INDEX.json
+?? docs/investor-proof-pack/MAURIMESH_PROOF_PACK_INDEX.json.backup-20260613-170403
+?? docs/investor-proof-pack/MAURIMESH_TECHNICAL_PROOF_SUMMARY.md
+?? docs/investor-proof-pack/README.md
+?? docs/native-proof/
+?? docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_certificate.md
+?? docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_hash_manifest.json
+?? docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_hash_manifest.md
+?? docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_verifier_report.json
+?? docs/raw-device-evidence-kit/
+?? docs/raw-device-evidence/
+?? docs/workspace-audits/
+?? eas-native-ble-gatt-readiness-gate.sh
+?? fast-java-and-native-coverage-check.sh
+?? finish-blemodule-ack-repair-and-inspect-shape.sh
+?? fix-all-mauripanel-import-placement.sh
+?? fix-and-capture-js-bundle-error.sh
+?? fix-android-sdk-path-and-rerun-native-check-v2.sh
+?? fix-android-sdk-path-and-rerun-native-check.sh
+?? fix-mauripanel-dashboard-crash.sh
+?? fix-mauripanel-missing-imports.sh
+?? install-maurimesh-investor-proof-pack.sh
+?? install-maurimesh-master-proof-index.sh
+?? install-maurimesh-native-ble-gatt-packet-logger.sh
+?? install-maurimesh-one-page-executive-summary.sh
+?? install-maurimesh-raw-device-evidence-kit.sh
+?? install-maurimesh-runtime-app-logs.sh
+?? install-store-forward-hash-manifest.sh
+?? install-store-forward-proof-verifier.sh
+?? maurimesh-agent-final-push-replit/
+?? maurimesh-final-apk-build-gate.sh
+?? maurimesh-js-bundle-check-20260612-050407/
+?? maurimesh-js-bundle-check-20260612-050703/
+?? patch-maurimesh-3device-proof-routes.sh
+?? patch-native-ble-gatt-packetid-logging-gate.sh
+?? proof/
+?? repair-maurimesh-blemodule-ack-logger-compile-error.sh
+?? run-gradle-with-java17-native-ble-check.sh
+?? scripts/guarded-native-ble-gatt-packetid-patcher.py
+?? scripts/inspect-native-ble-gatt-packetid-logging.sh
+?? scripts/patch-proof-screens-native-ble-logger.cjs
+?? scripts/patch-proof-screens-native-ble-logger.js
+?? scripts/proof-capture/
+?? scripts/validate-native-ble-gatt-packet-bound-proof.sh
+?? src/maurimesh/native/
+?? src/maurimesh/proof/lockedProofVault.ts
+?? src/maurimesh/proof/nativeBleGattProofVerdict.ts
+?? src/maurimesh/proofs/
+?? src/maurimesh/runtime/runtimeLog.ts
+?? start-eas-native-ble-gatt-compile-check.sh
+?? static-native-ble-gatt-wiring-audit.sh
+?? tools/crash-fixes/
+?? tools/evidence-run/
+?? tools/fixes/
+?? tools/proof-verifiers/create-store-forward-hash-manifest.js
+?? tools/proof-verifiers/verify-maurimesh-investor-proof-pack.js
+?? tools/proof-verifiers/verify-maurimesh-master-proof-index.js
+?? tools/proof-verifiers/verify-maurimesh-one-page-executive-summary.js
+?? tools/proof-verifiers/verify-maurimesh-raw-device-evidence-kit.js
+?? tools/proof-verifiers/verify-maurimesh-raw-evidence-run.js
+?? tools/proof-verifiers/verify-store-forward-hash-manifest.js
+?? tools/proof-verifiers/verify-store-forward-proof.js
+?? tools/raw-evidence/
+?? verify-mauripanel-fix-before-build.sh
+?? verify-mauripanel-placement-and-export.sh
+?? wire-native-ble-gatt-packetid-logging-guarded.sh

@@ -1,0 +1,2 @@
+PATCHED=/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt
+BACKUP=/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt.backup-native-gatt-bridge-v4

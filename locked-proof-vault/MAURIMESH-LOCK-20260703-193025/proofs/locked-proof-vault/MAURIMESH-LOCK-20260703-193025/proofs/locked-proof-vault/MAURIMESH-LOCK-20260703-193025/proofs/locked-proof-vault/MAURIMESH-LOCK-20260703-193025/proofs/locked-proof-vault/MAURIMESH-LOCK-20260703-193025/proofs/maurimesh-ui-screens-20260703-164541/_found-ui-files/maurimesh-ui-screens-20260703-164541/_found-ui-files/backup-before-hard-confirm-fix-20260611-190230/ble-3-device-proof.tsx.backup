@@ -1,0 +1,906 @@
+import React, { useMemo, useState } from "react";
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  BLE_3_DEVICE_PROOF,
+  BLE_3_DEVICE_STAGES,
+} from "../src/maurimesh/proof/ble3DeviceProof";
+
+type StageState = "LOCKED" | "READY" | "DONE";
+
+function makePacketId() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "MM3-";
+  for (let i = 0; i < 6; i += 1) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  out += "-";
+  for (let i = 0; i < 6; i += 1) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
+
+function deviceTone(device: string) {
+  if (device === "PHONE_A") return "#00D084";
+  if (device === "PHONE_B") return "#38BDF8";
+  return "#F59E0B";
+}
+
+export default function Ble3DeviceProofScreen() {
+  const [packetId, setPacketId] = useState("");
+  const [phoneAPacketIdInput, setPhoneAPacketIdInput] = useState("");
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  const [proofLog, setProofLog] = useState<string[]>([]);
+
+  const doneCount = BLE_3_DEVICE_STAGES.filter((s) => done[s.id]).length;
+  const isPassed = doneCount === BLE_3_DEVICE_STAGES.length && packetId.length > 0;
+
+  const currentStageIndex = useMemo(() => {
+    return BLE_3_DEVICE_STAGES.findIndex((stage) => !done[stage.id]);
+  }, [done]);
+
+  function appendLog(stageId: string, device: string, title: string) {
+    const line = `${new Date().toISOString()} | ${device} | ${stageId} | packetId=${packetId || "PENDING_PACKET"} | ${title}`;
+    setProofLog((prev) => [...prev, line]);
+  }
+
+  function confirmPhoneAPacketId() {
+    const cleaned = phoneAPacketIdInput.trim();
+
+    if (!cleaned) {
+      Alert.alert("Packet ID required", "Enter the real PHONE_A packetId first.");
+      return;
+    }
+
+    if (!cleaned.startsWith("MM3-") && !cleaned.startsWith("MM-")) {
+      Alert.alert(
+        "Check packet ID",
+        "This packetId does not start with MM3- or MM-. You can still use it, but confirm it exactly matches PHONE_A logs."
+      );
+    }
+
+    setPacketId(cleaned);
+    setProofApproved("PENDING");
+    setDone((prev) => ({ ...prev, PACKET_ID_GENERATED: true }));
+
+    const line =
+      `${new Date().toISOString()} | MAURIMESH_3_DEVICE_PROOF | PHONE_A | ${roles.PHONE_A || "A06"} | PHONE_A_PACKET_ID_CONFIRMED | packetId=${cleaned} | Operator entered real PHONE_A packetId for proof matching.`;
+
+    console.log(line);
+    setProofLog((prev) => [...prev, line]);
+
+    Alert.alert(
+      "PHONE_A packetId confirmed",
+      `This packetId must match every device log and screenshot:\n\n${cleaned}`
+    );
+  }
+
+  function approveProofExam() {
+    Alert.alert(
+      "Approve proof exam?",
+      "Approve only if the screen sequence, logs, and screenshots match the same packetId across PHONE_A, PHONE_B, and PHONE_C.",
+      [
+        {
+          text: "No, reset exam",
+          style: "destructive",
+          onPress: () => {
+            setProofApproved("REJECTED");
+            setPacketId("");
+            setPhoneAPacketIdInput("");
+            setDone({});
+            setProofLog([]);
+            setExamStarted(false);
+            console.log("MAURIMESH_3_DEVICE_PROOF | EXAM_REJECTED_RESET | Operator rejected proof exam and reset sequence.");
+            Alert.alert("Exam reset", "Start again when devices and packetId are ready.");
+          },
+        },
+        {
+          text: "Yes, approve",
+          onPress: () => {
+            setProofApproved("APPROVED");
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | EXAM_APPROVED_BY_OPERATOR | packetId=${packetId} | Pending final log/screenshot archive.`
+            );
+            Alert.alert(
+              "Proof exam approved",
+              "Approval saved inside this app session. Archive logs and screenshots now."
+            );
+          },
+        },
+      ]
+    );
+  }
+
+  function startExam() {
+    if (!rolesReady) {
+      Alert.alert("Choose devices first", "Select PHONE_A, PHONE_B, and PHONE_C before starting.");
+      return;
+    }
+
+    if (!packetId) {
+      Alert.alert("Packet ID required", "Enter or generate the PHONE_A packetId before starting.");
+      return;
+    }
+
+    setExamStarted(true);
+    setProofApproved("PENDING");
+
+    console.log(
+      `MAURIMESH_3_DEVICE_PROOF | EXAM_STARTED | mode=${examMode} | packetId=${packetId} | PHONE_A=${roles.PHONE_A} | PHONE_B=${roles.PHONE_B} | PHONE_C=${roles.PHONE_C}`
+    );
+
+    if (examMode === "GUIDED_AUTO") {
+      Alert.alert(
+        "Guided Auto Mode",
+        "The app will complete the expected on-screen sequence. This does not prove real BLE by itself. Approve only after logs/screenshots match.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Run guided sequence",
+            onPress: () => runGuidedAutoSequence(),
+          },
+        ]
+      );
+      return;
+    }
+
+    Alert.alert("Manual exam started", "Press each lit-up proof button in order.");
+  }
+
+  function runGuidedAutoSequence() {
+    if (!packetId) {
+      Alert.alert("Packet ID missing", "Enter PHONE_A packetId first.");
+      return;
+    }
+
+    const nextDone: Record<string, boolean> = {};
+    const lines: string[] = [];
+
+    BLE_3_DEVICE_STAGES.forEach((stage) => {
+      const physical =
+        stage.device === "PHONE_A"
+          ? roles.PHONE_A
+          : stage.device === "PHONE_B"
+            ? roles.PHONE_B
+            : roles.PHONE_C;
+
+      nextDone[stage.id] = true;
+
+      const line =
+        `${new Date().toISOString()} | MAURIMESH_3_DEVICE_PROOF | ${stage.device} | ${physical || "DEVICE"} | ${stage.id} | packetId=${packetId} | GUIDED_AUTO_EXPECTED_SEQUENCE`;
+
+      console.log(line);
+      lines.push(line);
+    });
+
+    setDone(nextDone);
+    setProofLog((prev) => [...prev, ...lines]);
+
+    console.log(
+      `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_SEQUENCE_COMPLETE | packetId=${packetId} | OPERATOR_APPROVAL_REQUIRED`
+    );
+
+    Alert.alert(
+      "Guided exam complete",
+      "Expected 3-device sequence is complete inside the app. Do you approve this proof exam?",
+      [
+        {
+          text: "No, reset",
+          style: "destructive",
+          onPress: () => {
+            setProofApproved("REJECTED");
+            setDone({});
+            setProofLog([]);
+            setExamStarted(false);
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_REJECTED_RESET | packetId=${packetId}`
+            );
+            Alert.alert("Exam reset", "Run it again manually or guided.");
+          },
+        },
+        {
+          text: "Yes, approve",
+          onPress: () => {
+            setProofApproved("APPROVED");
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_APPROVED_BY_OPERATOR | packetId=${packetId}`
+            );
+            Alert.alert(
+              "Congratulations",
+              "Proof exam approved inside the app. World milestone candidate: archive matching logs and screenshots now."
+            );
+          },
+        },
+      ]
+    );
+  }
+
+  function approveProofExam() {
+    Alert.alert(
+      "Approve proof exam?",
+      "Approve only if the screen sequence, logs, and screenshots match the same packetId across PHONE_A, PHONE_B, and PHONE_C.",
+      [
+        {
+          text: "No, reset exam",
+          style: "destructive",
+          onPress: () => {
+            setProofApproved("REJECTED");
+            setPacketId("");
+            setPhoneAPacketIdInput("");
+            setDone({});
+            setProofLog([]);
+            setExamStarted(false);
+            console.log("MAURIMESH_3_DEVICE_PROOF | EXAM_REJECTED_RESET | Operator rejected proof exam and reset sequence.");
+            Alert.alert("Exam reset", "Start again when devices and packetId are ready.");
+          },
+        },
+        {
+          text: "Yes, approve",
+          onPress: () => {
+            setProofApproved("APPROVED");
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | EXAM_APPROVED_BY_OPERATOR | packetId=${packetId} | Pending final log/screenshot archive.`
+            );
+            Alert.alert(
+              "Proof exam approved",
+              "Approval saved inside this app session. Archive logs and screenshots now."
+            );
+          },
+        },
+      ]
+    );
+  }
+
+  function startExam() {
+    if (!rolesReady) {
+      Alert.alert("Choose devices first", "Select PHONE_A, PHONE_B, and PHONE_C before starting.");
+      return;
+    }
+
+    if (!packetId) {
+      Alert.alert("Packet ID required", "Enter or generate the PHONE_A packetId before starting.");
+      return;
+    }
+
+    setExamStarted(true);
+    setProofApproved("PENDING");
+
+    console.log(
+      `MAURIMESH_3_DEVICE_PROOF | EXAM_STARTED | mode=${examMode} | packetId=${packetId} | PHONE_A=${roles.PHONE_A} | PHONE_B=${roles.PHONE_B} | PHONE_C=${roles.PHONE_C}`
+    );
+
+    if (examMode === "GUIDED_AUTO") {
+      Alert.alert(
+        "Guided Auto Mode",
+        "The app will complete the expected on-screen sequence. This does not prove real BLE by itself. Approve only after logs/screenshots match.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Run guided sequence",
+            onPress: () => runGuidedAutoSequence(),
+          },
+        ]
+      );
+      return;
+    }
+
+    Alert.alert("Manual exam started", "Press each lit-up proof button in order.");
+  }
+
+  function runGuidedAutoSequence() {
+    if (!packetId) {
+      Alert.alert("Packet ID missing", "Enter PHONE_A packetId first.");
+      return;
+    }
+
+    const nextDone: Record<string, boolean> = {};
+    const lines: string[] = [];
+
+    BLE_3_DEVICE_STAGES.forEach((stage) => {
+      const physical =
+        stage.device === "PHONE_A"
+          ? roles.PHONE_A
+          : stage.device === "PHONE_B"
+            ? roles.PHONE_B
+            : roles.PHONE_C;
+
+      nextDone[stage.id] = true;
+
+      const line =
+        `${new Date().toISOString()} | MAURIMESH_3_DEVICE_PROOF | ${stage.device} | ${physical || "DEVICE"} | ${stage.id} | packetId=${packetId} | GUIDED_AUTO_EXPECTED_SEQUENCE`;
+
+      console.log(line);
+      lines.push(line);
+    });
+
+    setDone(nextDone);
+    setProofLog((prev) => [...prev, ...lines]);
+
+    console.log(
+      `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_SEQUENCE_COMPLETE | packetId=${packetId} | OPERATOR_APPROVAL_REQUIRED`
+    );
+
+    Alert.alert(
+      "Guided exam complete",
+      "Expected 3-device sequence is complete inside the app. Do you approve this proof exam?",
+      [
+        {
+          text: "No, reset",
+          style: "destructive",
+          onPress: () => {
+            setProofApproved("REJECTED");
+            setDone({});
+            setProofLog([]);
+            setExamStarted(false);
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_REJECTED_RESET | packetId=${packetId}`
+            );
+            Alert.alert("Exam reset", "Run it again manually or guided.");
+          },
+        },
+        {
+          text: "Yes, approve",
+          onPress: () => {
+            setProofApproved("APPROVED");
+            console.log(
+              `MAURIMESH_3_DEVICE_PROOF | GUIDED_AUTO_APPROVED_BY_OPERATOR | packetId=${packetId}`
+            );
+            Alert.alert(
+              "Congratulations",
+              "Proof exam approved inside the app. World milestone candidate: archive matching logs and screenshots now."
+            );
+          },
+        },
+      ]
+    );
+  }
+
+  function handleStagePress(index: number) {
+    const stage = BLE_3_DEVICE_STAGES[index];
+
+    if (!examStarted) {
+      Alert.alert("Start exam first", "Choose Manual or Guided Auto, then press Start Proof Exam.");
+      return;
+    }
+
+    if (!examStarted) {
+      Alert.alert("Start exam first", "Choose Manual or Guided Auto, then press Start Proof Exam.");
+      return;
+    }
+
+    if (index !== currentStageIndex) {
+      Alert.alert(
+        "Stage locked",
+        "Complete the lit-up proof buttons in order so the packet path cannot be confused."
+      );
+      return;
+    }
+
+    if (stage.id === "PACKET_ID_GENERATED") {
+      const nextPacketId = makePacketId();
+      setPacketId(nextPacketId);
+      setDone((prev) => ({ ...prev, [stage.id]: true }));
+      const line = `${new Date().toISOString()} | PHONE_A | PACKET_ID_GENERATED | packetId=${nextPacketId} | A06 generated 3-device proof packet.`;
+      setProofLog((prev) => [...prev, line]);
+      Alert.alert("Packet ID generated", `Use this same packetId on every phone:\n\n${nextPacketId}`);
+      return;
+    }
+
+    if (!packetId) {
+      Alert.alert("Packet ID required", "Generate the packet ID first.");
+      return;
+    }
+
+    setDone((prev) => ({ ...prev, [stage.id]: true }));
+    appendLog(stage.id, stage.device, stage.title);
+
+    const isFinal = index === BLE_3_DEVICE_STAGES.length - 1;
+
+    if (isFinal) {
+      Alert.alert(
+        "Congratulations",
+        "3-device proof sequence is complete inside the app.\n\nWorld-history milestone candidate: validate now with APK logs and screenshots using the same packetId."
+      );
+    } else {
+      Alert.alert(
+        "Stage complete",
+        `${stage.title}\n\nNow move to the next lit-up button.`
+      );
+    }
+  }
+
+  function buildReport() {
+    return [
+      "MAURIMESH 3-DEVICE HOP PROOF REPORT",
+      "",
+      `Status: ${isPassed ? "APP_SEQUENCE_COMPLETE_PENDING_LOG_VALIDATION" : "IN_PROGRESS"}`,
+      `Packet ID: ${packetId || "NOT_GENERATED"}`,
+      "",
+      "Devices:",
+      `PHONE_A: ${BLE_3_DEVICE_PROOF.devices.phoneA.name} | ${BLE_3_DEVICE_PROOF.devices.phoneA.role} | ${BLE_3_DEVICE_PROOF.devices.phoneA.connection}`,
+      `PHONE_B: ${BLE_3_DEVICE_PROOF.devices.phoneB.name} | ${BLE_3_DEVICE_PROOF.devices.phoneB.role} | ${BLE_3_DEVICE_PROOF.devices.phoneB.connection}`,
+      `PHONE_C: ${BLE_3_DEVICE_PROOF.devices.phoneC.name} | ${BLE_3_DEVICE_PROOF.devices.phoneC.role} | ${BLE_3_DEVICE_PROOF.devices.phoneC.connection}`,
+      "",
+      `Forward path: ${BLE_3_DEVICE_PROOF.forwardPath}`,
+      `ACK path: ${BLE_3_DEVICE_PROOF.ackPath}`,
+      "",
+      "Stage status:",
+      ...BLE_3_DEVICE_STAGES.map((stage, index) => {
+        return `${index + 1}. ${stage.id}: ${done[stage.id] ? "DONE" : "NOT_DONE"} | ${stage.device}`;
+      }),
+      "",
+      "Proof log:",
+      ...(proofLog.length ? proofLog : ["NO_LOG_LINES_YET"]),
+      "",
+      `PASS rule: ${BLE_3_DEVICE_PROOF.passRule}`,
+      `Truth: ${BLE_3_DEVICE_PROOF.truth}`,
+      "",
+      "World milestone achievement:",
+      isPassed
+        ? "APP SEQUENCE COMPLETE. Real-world achievement can only be claimed after matching device logs and screenshots confirm the same packetId."
+        : "NOT COMPLETE YET.",
+    ].join("\n");
+  }
+
+  function copyReport() {
+    const report = buildReport();
+
+    if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(report);
+      Alert.alert("3-device proof report copied");
+      return;
+    }
+
+    console.log(report);
+    Alert.alert("Proof report printed", "Report printed to console/log output.");
+  }
+
+  function resetProof() {
+    Alert.alert("Reset proof sequence?", "This clears only the on-screen sequence.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Reset",
+        style: "destructive",
+        onPress: () => {
+          setPacketId("");
+          setPhoneAPacketIdInput("");
+          setDone({});
+          setProofLog([]);
+          setExamStarted(false);
+          setProofApproved("PENDING");
+        },
+      },
+    ]);
+  }
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Text style={styles.kicker}>MAURIMESH PROOF MODE</Text>
+      <Text style={styles.title}>3-Device Hop Proof</Text>
+
+      <View style={styles.heroCard}>
+        <Text style={styles.heroLabel}>MILESTONE</Text>
+        <Text style={styles.heroTitle}>A06 → S10 → A16 → S10 → A06 ACK</Text>
+        <Text style={styles.heroBody}>
+          Real proof is valid only when logs and screenshots show the same packetId across every stage.
+        </Text>
+      </View>
+
+      <View style={[styles.statusCard, isPassed ? styles.passBorder : styles.pendingBorder]}>
+        <Text style={styles.statusLabel}>STATUS</Text>
+        <Text style={styles.statusText}>
+          {isPassed ? "SEQUENCE COMPLETE" : "PENDING 3-DEVICE PROOF"}
+        </Text>
+        <Text style={styles.packetText}>packetId: {packetId || "NOT GENERATED"}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Device Roles</Text>
+        <Text style={styles.body}>PHONE_A: A06 / Sender / Wi-Fi ADB</Text>
+        <Text style={styles.body}>PHONE_B: S10 / Relay / Wi-Fi ADB</Text>
+        <Text style={styles.body}>PHONE_C: A16 / Receiver + ACK / USB Debugging</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Enter PHONE_A packetId</Text>
+        <Text style={styles.body}>
+          Enter the real packetId shown on PHONE_A / A06. This becomes the proof identity that must appear on PHONE_B / S10 and PHONE_C / A16 logs.
+        </Text>
+
+        <TextInput
+          value={phoneAPacketIdInput}
+          onChangeText={setPhoneAPacketIdInput}
+          placeholder="Example: MM3-ABC123-XYZ789"
+          placeholderTextColor="rgba(255,255,255,0.42)"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          style={styles.packetInput}
+        />
+
+        <TouchableOpacity style={styles.confirmPacketButton} onPress={confirmPhoneAPacketId}>
+          <Text style={styles.confirmPacketButtonText}>Confirm PHONE_A Packet ID</Text>
+        </TouchableOpacity>
+
+        <View style={styles.proofIdentityBox}>
+          <Text style={styles.proofIdentityLabel}>LOCKED PROOF PACKET</Text>
+          <Text style={styles.proofIdentityValue}>{packetId || "NOT CONFIRMED"}</Text>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Proof Exam Mode</Text>
+        <Text style={styles.body}>
+          Manual Mode gives full operator control. Guided Auto Mode completes the expected on-screen sequence, then asks for approval. Real proof still requires matching logs and screenshots.
+        </Text>
+
+        <View style={styles.modeRow}>
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              examMode === "MANUAL" && styles.modeButtonActive,
+            ]}
+            onPress={() => setExamMode("MANUAL")}
+          >
+            <Text style={[
+              styles.modeButtonText,
+              examMode === "MANUAL" && styles.modeButtonTextActive,
+            ]}>
+              Manual
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              examMode === "GUIDED_AUTO" && styles.modeButtonActiveBlue,
+            ]}
+            onPress={() => setExamMode("GUIDED_AUTO")}
+          >
+            <Text style={[
+              styles.modeButtonText,
+              examMode === "GUIDED_AUTO" && styles.modeButtonTextActive,
+            ]}>
+              Guided Auto
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.examStatusBox}>
+          <Text style={styles.proofIdentityLabel}>EXAM STATUS</Text>
+          <Text style={styles.proofIdentityValue}>
+            {examStarted ? "STARTED" : "NOT STARTED"} / APPROVAL: {proofApproved}
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.startExamButton} onPress={startExam}>
+          <Text style={styles.startExamButtonText}>Start Proof Exam</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Lit-up proof buttons</Text>
+        <Text style={styles.body}>Press only the lit-up READY button. This preserves proof order.</Text>
+
+        {BLE_3_DEVICE_STAGES.map((stage, index) => {
+          const state: StageState = done[stage.id]
+            ? "DONE"
+            : index === currentStageIndex
+              ? "READY"
+              : "LOCKED";
+          const tone = deviceTone(stage.device);
+
+          return (
+            <TouchableOpacity
+              key={stage.id}
+              onPress={() => handleStagePress(index)}
+              style={[
+                styles.stageButton,
+                state === "READY" && { borderColor: tone, backgroundColor: `${tone}24` },
+                state === "DONE" && styles.stageDone,
+                state === "LOCKED" && styles.stageLocked,
+              ]}
+            >
+              <View style={styles.stageTop}>
+                <Text style={[styles.stageDevice, { color: state === "LOCKED" ? "#64748B" : tone }]}>
+                  {stage.device}
+                </Text>
+                <Text style={[
+                  styles.stageState,
+                  state === "DONE" && { color: "#22C55E" },
+                  state === "READY" && { color: tone },
+                  state === "LOCKED" && { color: "#64748B" },
+                ]}>
+                  {state}
+                </Text>
+              </View>
+              <Text style={styles.stageTitle}>{index + 1}. {stage.title}</Text>
+              <Text style={styles.stageLabel}>{stage.label}</Text>
+              <Text style={styles.expectedLog}>{stage.expectedLog}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {isPassed ? (
+        <View style={styles.worldCard}>
+          <Text style={styles.worldTitle}>Congratulations</Text>
+          <Text style={styles.worldText}>
+            3-device proof sequence is complete inside the app. Save logs and screenshots now.
+            Once the same packetId is confirmed across all device logs, this becomes a major MauriMesh milestone.
+          </Text>
+        </View>
+      ) : null}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Current proof log</Text>
+        <View style={styles.logBox}>
+          {proofLog.length ? proofLog.map((line) => (
+            <Text key={line} style={styles.logText}>{line}</Text>
+          )) : <Text style={styles.logText}>No proof log yet.</Text>}
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.copyButton} onPress={copyReport}>
+        <Text style={styles.copyButtonText}>Copy Full 3-Device Proof Report</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.resetButton} onPress={resetProof}>
+        <Text style={styles.resetButtonText}>Reset On-Screen Proof</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: "#020403" },
+  content: { padding: 18, paddingBottom: 48, gap: 14 },
+  kicker: { color: "#00D084", fontWeight: "900", letterSpacing: 2, fontSize: 12 },
+  title: { color: "white", fontSize: 32, fontWeight: "900" },
+  heroCard: {
+    borderWidth: 1,
+    borderColor: "rgba(0,208,132,0.4)",
+    backgroundColor: "rgba(0,208,132,0.12)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 8,
+  },
+  heroLabel: { color: "#00D084", fontWeight: "900", letterSpacing: 1.4, fontSize: 11 },
+  heroTitle: { color: "white", fontSize: 18, fontWeight: "900" },
+  heroBody: { color: "rgba(255,255,255,0.8)", lineHeight: 21 },
+  statusCard: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 16,
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  passBorder: { borderColor: "#22C55E" },
+  pendingBorder: { borderColor: "#F59E0B" },
+  statusLabel: { color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: "900", letterSpacing: 1.3 },
+  statusText: { color: "white", fontSize: 22, fontWeight: "900" },
+  packetText: { color: "#00D084", fontSize: 14, fontWeight: "900" },
+  card: {
+    borderWidth: 1,
+    borderColor: "rgba(0,208,132,0.3)",
+    backgroundColor: "rgba(0,20,12,0.88)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 10,
+  },
+  cardTitle: { color: "white", fontSize: 18, fontWeight: "900" },
+  body: { color: "rgba(255,255,255,0.78)", lineHeight: 21 },
+  stageButton: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    gap: 8,
+  },
+  stageDone: {
+    borderColor: "#22C55E",
+    backgroundColor: "rgba(34,197,94,0.16)",
+  },
+  stageLocked: {
+    borderColor: "rgba(100,116,139,0.35)",
+    backgroundColor: "rgba(100,116,139,0.08)",
+  },
+  stageTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  stageDevice: { fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
+  stageState: { fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
+  stageTitle: { color: "white", fontSize: 16, fontWeight: "900" },
+  stageLabel: { color: "rgba(255,255,255,0.76)", lineHeight: 20 },
+  expectedLog: { color: "rgba(255,255,255,0.52)", fontSize: 11, lineHeight: 16 },
+  worldCard: {
+    borderWidth: 1,
+    borderColor: "#FACC15",
+    backgroundColor: "rgba(250,204,21,0.12)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 8,
+  },
+  worldTitle: { color: "#FACC15", fontSize: 22, fontWeight: "900" },
+  worldText: { color: "rgba(255,255,255,0.86)", lineHeight: 21 },
+  logBox: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 16,
+    padding: 12,
+    gap: 5,
+  },
+  logText: { color: "rgba(255,255,255,0.78)", fontSize: 11, lineHeight: 17 },
+  modeRow: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  modeButton: {
+    flex: 1,
+    minWidth: 130,
+    minHeight: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  modeButtonActive: {
+    borderColor: "#00D084",
+    backgroundColor: "rgba(0,208,132,0.18)",
+  },
+  modeButtonActiveBlue: {
+    borderColor: "#38BDF8",
+    backgroundColor: "rgba(56,189,248,0.18)",
+  },
+  modeButtonText: {
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "900",
+  },
+  modeButtonTextActive: {
+    color: "white",
+  },
+  examStatusBox: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 12,
+    gap: 4,
+  },
+  startExamButton: {
+    minHeight: 54,
+    borderRadius: 16,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  startExamButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  modeRow: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  modeButton: {
+    flex: 1,
+    minWidth: 130,
+    minHeight: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  modeButtonActive: {
+    borderColor: "#00D084",
+    backgroundColor: "rgba(0,208,132,0.18)",
+  },
+  modeButtonActiveBlue: {
+    borderColor: "#38BDF8",
+    backgroundColor: "rgba(56,189,248,0.18)",
+  },
+  modeButtonText: {
+    color: "rgba(255,255,255,0.7)",
+    fontWeight: "900",
+  },
+  modeButtonTextActive: {
+    color: "white",
+  },
+  examStatusBox: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 12,
+    gap: 4,
+  },
+  startExamButton: {
+    minHeight: 54,
+    borderRadius: 16,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  startExamButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  packetInput: {
+    minHeight: 54,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(0,208,132,0.5)",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    color: "white",
+    paddingHorizontal: 14,
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  confirmPacketButton: {
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: "#38BDF8",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  confirmPacketButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  proofIdentityBox: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 12,
+    gap: 4,
+  },
+  proofIdentityLabel: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+  },
+  proofIdentityValue: {
+    color: "#00D084",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  copyButton: {
+    minHeight: 56,
+    borderRadius: 18,
+    backgroundColor: "#00D084",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+  copyButtonText: { color: "white", fontSize: 16, fontWeight: "900" },
+  resetButton: {
+    minHeight: 52,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.5)",
+    backgroundColor: "rgba(239,68,68,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+  resetButtonText: { color: "#FCA5A5", fontSize: 15, fontWeight: "900" },
+});

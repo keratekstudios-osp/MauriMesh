@@ -1,0 +1,17 @@
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt:28:            add(MauriMeshNativeBlePacketPackage())
+android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt:255:          MauriMeshNativeBlePacketLogger.gattWrite(characteristic.value, "before writeCharacteristic MeshCentralClient.kt")
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:14:public class MauriMeshNativeBlePacketModule extends ReactContextBaseJavaModule {
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:15:private static final String TAG = "MauriMeshNativeBlePacket";
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:17:public MauriMeshNativeBlePacketModule(ReactApplicationContext reactContext) {
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.java:24:return "MauriMeshNativeBlePacket";
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.java:14:public class MauriMeshNativeBlePacketPackage implements ReactPackage {
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.java:19:modules.add(new MauriMeshNativeBlePacketModule(reactContext));
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketLogger.kt:14:object MauriMeshNativeBlePacketLogger {
+android/app/src/main/java/com/maurimesh/messenger/MainApplication.kt.backup-native-gatt-bridge-v4:28:            add(MauriMeshNativeBlePacketPackage())
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.kt:12:class MauriMeshNativeBlePacketModule(
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.kt:16:  override fun getName(): String = "MauriMeshNativeBlePacket"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.kt:24:      "GATT_TRIGGER_NATIVE_METHOD_ENTERED | packetId=$cleanPacketId | module=MauriMeshNativeBlePacket | finalPassClaimed=false"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.kt:29:    result.putString("module", "MauriMeshNativeBlePacket")
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketModule.kt:203:            2 -> "MauriMeshNativeBlePacket"
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.kt:8:class MauriMeshNativeBlePacketPackage : ReactPackage {
+android/app/src/main/java/com/maurimesh/messenger/MauriMeshNativeBlePacketPackage.kt:10:    return listOf(MauriMeshNativeBlePacketModule(reactContext))

@@ -1,0 +1,80 @@
+MauriMesh Native BLE/GATT Candidate Files
+Patch ID: MM-NATIVE-BLE-GATT-LOGGING-20260614-013511
+Generated: 2026-06-14T01:35:13Z
+
+Search patterns:
+BluetoothGatt, BluetoothGattCallback, BluetoothLeAdvertiser, BluetoothLeScanner,
+ScanCallback, startAdvertising, onScanResult, writeCharacteristic,
+readCharacteristic, onCharacteristicChanged
+
+============================================================
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/mesh/MeshEngine.kt
+3:import android.bluetooth.BluetoothGatt
+4:import android.bluetooth.BluetoothGattCallback
+5:import android.bluetooth.BluetoothGattCharacteristic
+96:    val gattCallback: BluetoothGattCallback = object : BluetoothGattCallback() {
+99:            gatt: BluetoothGatt?,
+100:            characteristic: BluetoothGattCharacteristic?,
+109:        override fun onCharacteristicChanged(
+110:            gatt: BluetoothGatt,
+111:            characteristic: BluetoothGattCharacteristic,
+121:        override fun onCharacteristicChanged(
+122:            gatt: BluetoothGatt?,
+123:            characteristic: BluetoothGattCharacteristic?
+------------------------------------------------------------
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MauriMeshBleModule.kt
+8:import android.bluetooth.le.BluetoothLeScanner
+9:import android.bluetooth.le.ScanCallback
+31:  private var scanner: BluetoothLeScanner? = null
+32:  private var scanCallback: ScanCallback? = null
+142:        lastError = "BluetoothLeScanner unavailable."
+155:      scanCallback = object : ScanCallback() {
+156:        override fun onScanResult(callbackType: Int, result: ScanResult) {
+------------------------------------------------------------
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MeshCentralClient.kt
+5:import android.bluetooth.BluetoothGatt
+6:import android.bluetooth.BluetoothGattCallback
+7:import android.bluetooth.BluetoothGattCharacteristic
+8:import android.bluetooth.BluetoothGattService
+121:    var gatt: BluetoothGatt? = null
+145:      val callback = object : BluetoothGattCallback() {
+146:        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+147:          if (status != BluetoothGatt.GATT_SUCCESS) {
+174:        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+175:          servicesReady = status == BluetoothGatt.GATT_SUCCESS
+183:          g: BluetoothGatt,
+184:          characteristic: BluetoothGattCharacteristic,
+188:          writeCallbackOk = status == BluetoothGatt.GATT_SUCCESS
+220:      val service: BluetoothGattService? = gatt?.getService(MeshRawPacketUuids.SERVICE_UUID)
+241:      characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+245:          val status = gatt?.writeCharacteristic(
+248:            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+250:          status == BluetoothGatt.GATT_SUCCESS
+255:          gatt?.writeCharacteristic(characteristic) == true
+260:          "sendRawPacket writeCharacteristic refused",
+------------------------------------------------------------
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/MeshRawPacketGattServer.kt
+4:import android.bluetooth.BluetoothGatt
+5:import android.bluetooth.BluetoothGattCharacteristic
+6:import android.bluetooth.BluetoothGattServer
+7:import android.bluetooth.BluetoothGattServerCallback
+8:import android.bluetooth.BluetoothGattService
+30:  private var gattServer: BluetoothGattServer? = null
+38:  private val callback = object : BluetoothGattServerCallback() {
+42:      characteristic: BluetoothGattCharacteristic?,
+56:            gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, offset, null)
+66:            gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, offset, null)
+98:          gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null)
+125:      val service = BluetoothGattService(
+127:        BluetoothGattService.SERVICE_TYPE_PRIMARY
+131:        BluetoothGattCharacteristic.PROPERTY_WRITE or
+132:          BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
+134:      val permissions = BluetoothGattCharacteristic.PERMISSION_WRITE
+136:      val characteristic = BluetoothGattCharacteristic(
+------------------------------------------------------------
+/home/runner/workspace/android/app/src/main/java/com/maurimesh/messenger/maurimesh/blehardware/MauriMeshHardwareBleScanService.kt
+31:  private var scanner: BluetoothLeScanner? = null
+33:  private val callback = object : ScanCallback() {
+34:    override fun onScanResult(callbackType: Int, result: ScanResult) {
+59:      results.forEach { onScanResult(ScanSettings.CALLBACK_TYPE_ALL_MATCHES, it) }
+------------------------------------------------------------

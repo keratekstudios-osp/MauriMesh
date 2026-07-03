@@ -1,0 +1,28 @@
+JAVA_HOME=not-set
+
+command -v java:
+
+java -version:
+./fast-java-and-native-coverage-check.sh: line 28: java: command not found
+
+Replit/Nix Java candidates:
+/nix/store/023zqb5jvvjhv5l1b0fzdaqxy8c7ilcl-adoptopenjdk-openj9-bin-11.0.11
+/nix/store/02p5gxk3prbwl6ammmhvb8rmxiwrcsxi-adoptopenjdk-jre-openj9-bin-8.0.292
+/nix/store/04x0jpk5rc0amvwk8zp2n1drdvczwgan-adoptopenjdk-jre-hotspot-bin-16.0.1
+/nix/store/06xc07zqnjijdkfiz5s6yclxn40z8hc9-perl5.34.1-GDGraph-1.54
+/nix/store/06zxkszdjdkg83qp4rfvfswalk47k0kj-python3.12-zlib-ng-0.5.1-dist
+/nix/store/070mwhhqv43nsxsbq3y2vx34j9hvsby6-bcprov-jdk15on-1.48.pom
+/nix/store/07d482ylk5xf54xaphjdkm6adc7cd9j8-pub-args-2.6.0
+/nix/store/081xm48sp30fdzpw6jdkqwlrlc86mf31-python3.12-dissect-ole-3.10
+/nix/store/08307j5x1ip16s0b0nik01i77pz6zch1-currency-date-range-jdk10.patch
+/nix/store/08h640nrj9khcyhqpa77y33vc6rchrlm-adoptopenjdk-jre-hotspot-bin-8.0.372
+/nix/store/023zqb5jvvjhv5l1b0fzdaqxy8c7ilcl-adoptopenjdk-openj9-bin-11.0.11
+/nix/store/02p5gxk3prbwl6ammmhvb8rmxiwrcsxi-adoptopenjdk-jre-openj9-bin-8.0.292
+/nix/store/04x0jpk5rc0amvwk8zp2n1drdvczwgan-adoptopenjdk-jre-hotspot-bin-16.0.1
+/nix/store/08h640nrj9khcyhqpa77y33vc6rchrlm-adoptopenjdk-jre-hotspot-bin-8.0.372
+/nix/store/0902ybq464176c7wqhf7f7fyaggqp0w7-openjdk-17.0.1+12.drv
+/nix/store/0bza6hsianr411lckb9cmnvnv5rw7mvr-adoptopenjdk-hotspot-bin-16.0.2
+/nix/store/0c4mrba21hqkn0k8mg262rq2wisjsmiw-openjdk-19.0.2+7
+/nix/store/0i6cn8r35qp2qc2i6pnivja6dsjgbac2-adoptopenjdk-hotspot-bin-8.0.322.drv
+/nix/store/0pc9b7gs4lcj78zrgh2j31y532dc7fjf-adoptopenjdk-hotspot-bin-15.0.2
+/nix/store/0pr3m4hq7cpdavaaw7mkilysgg43rfv2-openjdk-headless-8u432-b06-debug

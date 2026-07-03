@@ -1,0 +1,39 @@
+{
+  "type": "MAURIMESH_VAULT_HEALTH_LAYER_LOCK",
+  "generatedAt": "20260614-075022",
+  "result": "LOCKED_PASS",
+  "layer": "Vault Health Layer",
+  "status": {
+    "proofVaultHealth": "PASS",
+    "localVaultPersistence": "PASS",
+    "healthExportSave": "PASS",
+    "noCrashAdbCapture": "PASS",
+    "falseNativeBleGattClaimBlocked": "PASS",
+    "nativeThreeDeviceBleGattPacketBoundProof": "PENDING"
+  },
+  "phoneEvidence": {
+    "entriesFound": 3,
+    "proofEntries": 1,
+    "totalBytes": 1885,
+    "packetIds": ["MM3-D6MNVK-0YNTOK"],
+    "byType": {
+      "THREE_DEVICE_RELAY_PROOF": 1,
+      "OTHER": 2
+    },
+    "nativeBleGattPacketBoundPassCount": 0
+  },
+  "adbEvidence": {
+    "result": "PASS_NO_FATAL_CRASH_SEEN",
+    "fatalJsErrorCount": 0,
+    "macReport": "/Users/maurimesh/Desktop/MAURIMESH_PROOF_VAULT_HEALTH_NO_CRASH_20260614-194308/MAURIMESH_PROOF_VAULT_HEALTH_NO_CRASH_REPORT_RECOVERED.md",
+    "macCrashExtract": "/Users/maurimesh/Desktop/MAURIMESH_PROOF_VAULT_HEALTH_NO_CRASH_20260614-194308/crash_extract.txt"
+  },
+  "truthRules": [
+    "Local vault storage proof is not native transport proof",
+    "Health exports are OTHER entries",
+    "Health exports use NO_PACKET_ID",
+    "Native BLE/GATT packet-bound PASS remains zero",
+    "Native BLE/GATT packet-bound PASS requires packetId inside native transport logs",
+    "No BLE/GATT proof is claimed by this lock"
+  ]
+}

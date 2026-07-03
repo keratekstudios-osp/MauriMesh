@@ -1,0 +1,131 @@
+{
+  "project": "MauriMesh",
+  "indexName": "MauriMesh Master Proof Index",
+  "createdAt": "2026-06-13T17:00:01.063Z",
+  "status": "ACTIVE_PROOF_ARCHIVE",
+  "proofStandard": {
+    "rule": "A proof is strongest when packet identity, stage order, device role, ACK path, archive clone, external verification, and hash seal are preserved.",
+    "levels": [
+      "APP_UI_PASS",
+      "LOG_CLONE_ARCHIVED",
+      "EXTERNAL_VERIFIER_PASS",
+      "CERTIFICATE_GENERATED",
+      "HASH_MANIFEST_PASS"
+    ]
+  },
+  "milestones": [
+    {
+      "id": "MM-PROOF-001",
+      "title": "MauriMesh 2-Device BLE Relay Proof",
+      "status": "PASSED",
+      "proofLevel": "APP_UI_PASS_SCREENSHOT_ARCHIVED",
+      "packetId": "SOURCE_SCREENSHOT_OR_DEVICE_LOG_REQUIRED_FOR_EXACT_PACKET_ID",
+      "devices": {
+        "PHONE_A": "Samsung Galaxy A06 / Sender",
+        "PHONE_B": "Samsung Galaxy S10 / Relay"
+      },
+      "verifiedChain": [
+        "PHONE_A -> TX packet",
+        "PHONE_B -> RX packet",
+        "PHONE_B -> ACK back to PHONE_A",
+        "PHONE_A -> ACK received"
+      ],
+      "meaning": "MauriMesh proved a two-device sender-to-relay ACK chain at app proof level.",
+      "archiveNote": "Keep original screenshot and copied proof report/logcat with this index."
+    },
+    {
+      "id": "MM-PROOF-002",
+      "title": "MauriMesh 3-Device Hop Relay Proof",
+      "status": "PASSED",
+      "proofLevel": "APP_UI_PASS_SCREENSHOT_ARCHIVED",
+      "packetId": "MM3-JSY73G-JKDXYR",
+      "devices": {
+        "PHONE_A": "Samsung Galaxy A06 / Sender / Wi-Fi ADB",
+        "PHONE_B": "Samsung Galaxy S10 / Relay / Wi-Fi ADB",
+        "PHONE_C": "Samsung Galaxy A16 / Receiver + ACK / USB Debugging"
+      },
+      "verifiedChain": [
+        "PHONE_A/A06 -> PACKET_ID_GENERATED",
+        "PHONE_A/A06 -> TX_A06_TO_S10",
+        "PHONE_B/S10 -> RX_S10_FROM_A06",
+        "PHONE_B/S10 -> RELAY_S10_TO_A16",
+        "PHONE_C/A16 -> RX_A16_FROM_S10",
+        "PHONE_C/A16 -> ACK_A16_TO_S10",
+        "PHONE_B/S10 -> ACK_RELAY_S10_TO_A06",
+        "PHONE_A/A06 -> ACK_RECEIVED_A06"
+      ],
+      "meaning": "MauriMesh proved a three-device hop relay path with ACK return at app proof level.",
+      "archiveNote": "Keep original screenshots, copied proof report, and logcat output with this index."
+    },
+    {
+      "id": "MM-PROOF-003",
+      "title": "MauriMesh Store-Forward Delay Proof",
+      "status": "PASSED",
+      "proofLevel": "APP_UI_PASS_LOG_CLONED",
+      "packetId": "MMSF-TEJFNH-K3FKYM",
+      "devices": {
+        "PHONE_A": "Samsung Galaxy A06 / Sender",
+        "PHONE_B": "Samsung Galaxy S10 / Store-Forward Relay",
+        "PHONE_C": "Samsung Galaxy A16 / Delayed Receiver + ACK"
+      },
+      "verifiedChain": [
+        "PHONE_A/A06 -> PACKET_ID_CONFIRMED",
+        "PHONE_A/A06 -> TX_A06_TO_S10_STORE_REQUEST",
+        "PHONE_B/S10 -> S10_STORE_PACKET",
+        "PHONE_C/A16 -> A16_OFFLINE_CONFIRMED",
+        "PHONE_B/S10 -> S10_HOLD_DELAY",
+        "PHONE_C/A16 -> A16_RETURNS",
+        "PHONE_B/S10 -> S10_FORWARD_STORED_TO_A16",
+        "PHONE_C/A16 -> RX_A16_STORED_PACKET",
+        "PHONE_C/A16 -> ACK_A16_TO_S10_STORED",
+        "PHONE_B/S10 -> ACK_RELAY_S10_TO_A06_STORED",
+        "PHONE_A/A06 -> ACK_RECEIVED_A06_STORED"
+      ],
+      "meaning": "MauriMesh proved packet identity survives delayed receiver loss, relay holding, receiver return, stored delivery, and ACK relay back to sender.",
+      "archiveFiles": [
+        "docs/proof-archives/store-forward/store_forward_MMSF-TEJFNH-K3FKYM.log"
+      ]
+    },
+    {
+      "id": "MM-PROOF-004",
+      "title": "MauriMesh Store-Forward External Verifier",
+      "status": "PASSED",
+      "proofLevel": "EXTERNAL_VERIFIER_PASS_CERTIFICATE_GENERATED",
+      "packetId": "MMSF-TEJFNH-K3FKYM",
+      "verifier": "tools/proof-verifiers/verify-store-forward-proof.js",
+      "certificate": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_certificate.md",
+      "jsonReport": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_verifier_report.json",
+      "meaning": "Independent project-side verifier confirmed packetId, stage order, device roles, delay condition, rediscovery, and final ACK."
+    },
+    {
+      "id": "MM-PROOF-005",
+      "title": "MauriMesh Store-Forward Hash Manifest",
+      "status": "PASSED",
+      "proofLevel": "HASH_MANIFEST_PASS",
+      "packetId": "MMSF-TEJFNH-K3FKYM",
+      "manifestJson": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_hash_manifest.json",
+      "manifestMarkdown": "docs/proof-certificates/store_forward_MMSF-TEJFNH-K3FKYM_hash_manifest.md",
+      "verifier": "tools/proof-verifiers/verify-store-forward-hash-manifest.js",
+      "meaning": "Store-forward proof files are now tamper-evident through SHA-256 sealing."
+    },
+    {
+      "id": "RAW_DEVICE_STORE_FORWARD_MMSF_RAW_LIVE_001",
+      "title": "Store-Forward Raw Device Evidence PASS + Archive Hash Seal",
+      "packetId": "MMSF-RAW-LIVE-001",
+      "verdict": "PASS",
+      "proofType": "three_device_store_forward_raw_adb_logcat_capture",
+      "devices": [
+        "Samsung Galaxy A06",
+        "Samsung Galaxy S10",
+        "Samsung Galaxy A16"
+      ],
+      "rawEvidenceFolder": "/Users/maurimesh/maurimesh-raw-evidence/run-20260613T194329Z-MMSF-RAW-LIVE-001",
+      "archiveFile": "/Users/maurimesh/maurimesh-raw-evidence/maurimesh-raw-device-proof-MMSF-RAW-LIVE-001.tar.gz",
+      "sha256": "6088e2bb906df9f7c4bd2c1246715b047e43b698db40b1026a7bfe981208afe8",
+      "certificate": "docs/proof-certificates/raw_device_MMSF-RAW-LIVE-001_certificate.md",
+      "protected": true
+    }
+  ],
+  "updatedAt": "2026-06-13T19:54:56.935Z",
+  "totalMilestones": 6
+}
