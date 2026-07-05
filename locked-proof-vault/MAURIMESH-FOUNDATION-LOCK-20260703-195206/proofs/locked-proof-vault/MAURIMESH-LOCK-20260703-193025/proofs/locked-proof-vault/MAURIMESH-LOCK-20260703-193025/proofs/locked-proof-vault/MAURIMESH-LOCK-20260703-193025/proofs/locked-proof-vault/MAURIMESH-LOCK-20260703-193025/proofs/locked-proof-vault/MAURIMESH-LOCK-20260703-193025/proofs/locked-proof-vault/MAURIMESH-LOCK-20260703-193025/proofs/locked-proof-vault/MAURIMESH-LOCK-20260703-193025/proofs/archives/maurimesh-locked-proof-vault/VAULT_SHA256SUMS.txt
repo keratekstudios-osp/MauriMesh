@@ -1,6 +1,0 @@
-5cb443ab3f491ffaab348dd3de12e7e42ea09fad08915c35483b21a5a0a99464  archives/maurimesh-locked-proof-vault/LOCKED_PROOF_LEDGER.md
-42e4853c3616466175541fe4b5e7377e21f0df0db19f106949985dca02616a4b  archives/maurimesh-locked-proof-vault/manifests/maurimesh-proof-manifest.json
-d6e1acde404d3dbe7c23b215900d67be4565df40f4ebae6c1e8bc68f025c747a  archives/maurimesh-locked-proof-vault/proofs/MM-PROOF-002-2HOP.md
-b0ce91c27eaee922a96033b2332e4fb08993ad27330961d39b5c37bb7b308a19  archives/maurimesh-locked-proof-vault/proofs/MM-PROOF-003-3DEVICE-HOP.md
-883a6f65725ab45299942428e3ef977a9c5da0f7af9baa13d008fd75afa92395  archives/maurimesh-locked-proof-vault/proofs/MM-PROOF-004-STORE-FORWARD.md
-4712fd746d1e84e8e4b7e8060ed7f195fee274e52cee847b3b7cb9d7095160ac  archives/maurimesh-locked-proof-vault/raw-evidence/README_EVIDENCE_DROP.md

@@ -1,4 +1,0 @@
-package.json JSON: PASS
-
-LOCAL TYPESCRIPT CHECK
-Command: node_modules/.bin/tsc --noEmit

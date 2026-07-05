@@ -1,6 +1,0 @@
-Generated: 2026-06-14T01:50:29Z
-
-Existing ANDROID_HOME=not-set
-Existing ANDROID_SDK_ROOT=not-set
-
-Common SDK folder checks:

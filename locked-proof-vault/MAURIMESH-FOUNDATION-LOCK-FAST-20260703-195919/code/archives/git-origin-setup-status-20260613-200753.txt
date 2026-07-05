@@ -1,8 +1,0 @@
-MAURIMESH GITHUB ORIGIN SETUP STATUS
-
-Verdict: PASS
-Origin: https://github.com/keratekstudios-osp/MauriMeshMessenger-BE.git
-Packet ID: MMSF-RAW-LIVE-001
-Proof commit: 6ce0f88cbb4d6572c221eafc2b540cb19bfa7a86
-Proof tag: proof/store-forward-raw-device-MMSF-RAW-LIVE-001
-Push status: NOT PUSHED BY THIS SCRIPT
